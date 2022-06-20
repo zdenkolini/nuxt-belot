@@ -59,5 +59,6 @@
     "stylelint-config-standard": "^24.0.0",
     "ts-jest": "^27.1.1",
     "vue-jest": "^3.0.4"
-  }
+  },
+  "packageManager": "yarn@3.2.1"
 }
