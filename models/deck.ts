@@ -1,15 +1,15 @@
 import zod from 'zod';
-import { CardModelType, thirtyTwoCardDeck } from '~/models/card';
+import { CardSchema, thirtyTwoCardDeck } from '~/models/card';
 import { shuffle } from '~/util/shuffle';
 
 export const deckType = zod.enum(['belot', 'raub', 'remi']);
 
-export type DeckType = zod.infer<typeof deckType>;
+export type DeckSchema = zod.infer<typeof deckType>;
 
 export class DeckModel {
-  private readonly cards: CardModelType[];
+  private readonly cards: CardSchema[];
 
-  constructor(public type: DeckType) {
+  constructor(public type: DeckSchema) {
     switch (type) {
       case 'belot': {
         this.cards = shuffle(thirtyTwoCardDeck.slice());
