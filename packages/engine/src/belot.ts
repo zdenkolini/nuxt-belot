@@ -1,4 +1,12 @@
-import { belotDeck, shuffle, suits, type Card, type Suit } from './cards';
+import {
+  belotDeck,
+  ranks,
+  shuffle,
+  suits,
+  type Card,
+  type Rank,
+  type Suit,
+} from './cards';
 import type { Applied, Ruleset, Seat } from './ruleset';
 
 export type BelotVariant = { targetScore: 501 | 701 | 1001 };
@@ -13,6 +21,8 @@ export type BelotEvent =
   | { type: 'called'; seat: Seat; suit: Suit }
   | { type: 'played'; seat: Seat; card: Card }
   | { type: 'trickWon'; seat: Seat }
+  | { type: 'declared'; declarations: Declaration[] }
+  | { type: 'belote'; seat: Seat }
   | { type: 'dealScored'; score: DealScore };
 
 // Seats 0 and 2 are team 0, seats 1 and 3 are team 1.
@@ -23,8 +33,19 @@ export type DealScore = {
   cards: TeamPoints;
   lastTrick: TeamPoints;
   sweep: TeamPoints;
+  declarations: TeamPoints;
+  belote: TeamPoints;
   failed: boolean;
   points: TeamPoints;
+  // The team that wins the match outright with a full sequence, if any.
+  winsMatch: Team | null;
+};
+
+export type Declaration = {
+  seat: Seat;
+  kind: 'sequence' | 'fourOfAKind' | 'fullSequence';
+  cards: Card[];
+  points: number;
 };
 
 export type Play = { seat: Seat; card: Card };
@@ -40,6 +61,8 @@ export type Deal = {
   caller: Seat | null;
   trick: Play[];
   tricks: Trick[];
+  declarations: Declaration[];
+  belote: Seat | null;
 };
 
 export type BelotState = {
@@ -56,6 +79,8 @@ export type BelotView = {
   trump: Suit | null;
   caller: Seat | null;
   trick: Play[];
+  declarations: Declaration[];
+  belote: Seat | null;
 };
 
 const rightOf = (seat: Seat) => ((seat + 1) % 4) as Seat;
@@ -72,6 +97,8 @@ const startDeal = (dealer: Seat, seed: number): Deal => {
     caller: null,
     trick: [],
     tricks: [],
+    declarations: [],
+    belote: null,
   };
 };
 
@@ -124,6 +151,36 @@ const cardPoints: Record<Card['rank'], [plain: number, trump: number]> = {
 
 const teamOf = (seat: Seat) => (seat % 2) as Team;
 
+// Ties break by value, then length, then top card, then the seat closest
+// to the dealer's right.
+const declarationKey = (declaration: Declaration, dealer: Seat) => [
+  declaration.points,
+  declaration.cards.length,
+  ranks.indexOf(declaration.cards.at(-1)!.rank),
+  -((declaration.seat - dealer + 3) % 4),
+];
+
+const outranks = (a: Declaration, b: Declaration, dealer: Seat) => {
+  const keyA = declarationKey(a, dealer);
+  const keyB = declarationKey(b, dealer);
+  const step = keyA.findIndex((value, i) => value !== keyB[i]);
+  return step >= 0 && keyA[step]! > keyB[step]!;
+};
+
+// Only the team with the highest declaration scores, with all of its declarations.
+const scoreDeclarations = (deal: Deal): TeamPoints => {
+  const points: TeamPoints = [0, 0];
+  if (deal.declarations.length === 0) return points;
+  const highest = deal.declarations.reduce((top, declaration) =>
+    outranks(declaration, top, deal.dealer) ? declaration : top,
+  );
+  const team = teamOf(highest.seat);
+  for (const declaration of deal.declarations) {
+    if (teamOf(declaration.seat) === team) points[team] += declaration.points;
+  }
+  return points;
+};
+
 const scoreDeal = (deal: Deal): DealScore => {
   const cards: TeamPoints = [0, 0];
   for (const { plays, winner } of deal.tricks) {
@@ -138,7 +195,11 @@ const scoreDeal = (deal: Deal): DealScore => {
   const winners = new Set(deal.tricks.map(({ winner }) => teamOf(winner)));
   if (winners.size === 1) sweep[[...winners][0]!] = 90;
 
-  const parts = [cards, lastTrick, sweep];
+  const declarations = scoreDeclarations(deal);
+  const belote: TeamPoints = [0, 0];
+  if (deal.belote !== null) belote[teamOf(deal.belote)] = 20;
+
+  const parts = [cards, lastTrick, sweep, declarations, belote];
   const total = (team: Team) =>
     parts.reduce((sum, part) => sum + part[team], 0);
   const callers = teamOf(deal.caller!);
@@ -149,7 +210,73 @@ const scoreDeal = (deal: Deal): DealScore => {
     points[others] = total(0) + total(1);
     points[callers] = 0;
   }
-  return { cards, lastTrick, sweep, failed, points };
+  const full = deal.declarations.find(
+    ({ kind, cards }) =>
+      kind === 'fullSequence' &&
+      fullSequence(cards[0]!.suit, deal.trump!).winsMatch,
+  );
+  const winsMatch = full ? teamOf(full.seat) : null;
+  return {
+    cards,
+    lastTrick,
+    sweep,
+    declarations,
+    belote,
+    failed,
+    points,
+    winsMatch,
+  };
+};
+
+const sequencePoints = (length: number) =>
+  length === 3 ? 20 : length === 4 ? 50 : 100;
+
+const fourOfAKindPoints: Partial<Record<Rank, number>> = {
+  jack: 200,
+  nine: 150,
+  ace: 100,
+  ten: 100,
+  king: 100,
+  queen: 100,
+};
+
+// Full sequence: the rule is an open question (#140 Further Notes).
+// Current assumption: eight trumps win the match; eight cards of another
+// suit are a declaration worth 120. Change the rule here only.
+const fullSequence = (suit: Suit, trump: Suit) =>
+  suit === trump
+    ? { points: 0, winsMatch: true }
+    : { points: 120, winsMatch: false };
+
+const declarationsOf = (seat: Seat, hand: Card[], trump: Suit) => {
+  const found: Declaration[] = [];
+  for (const suit of suits) {
+    let run: Card[] = [];
+    for (const rank of [...ranks, null]) {
+      const card = hand.find(
+        (held) => held.suit === suit && held.rank === rank,
+      );
+      if (card) {
+        run.push(card);
+        continue;
+      }
+      if (run.length === 8) {
+        const { points } = fullSequence(suit, trump);
+        found.push({ seat, kind: 'fullSequence', cards: run, points });
+      } else if (run.length >= 3) {
+        const points = sequencePoints(run.length);
+        found.push({ seat, kind: 'sequence', cards: run, points });
+      }
+      run = [];
+    }
+  }
+  for (const [rank, points] of Object.entries(fourOfAKindPoints)) {
+    const cards = hand.filter((held) => held.rank === rank);
+    if (cards.length === 4) {
+      found.push({ seat, kind: 'fourOfAKind', cards, points });
+    }
+  }
+  return found;
 };
 
 const legalCards = (hand: Card[], trick: Play[], trump: Suit): Card[] => {
@@ -185,18 +312,24 @@ const sameMove = (a: BelotMove, b: BelotMove) => {
   return a.type === b.type;
 };
 
-const call = (deal: Deal, seat: Seat, trump: Suit): Deal => ({
-  ...deal,
-  phase: 'playing',
-  turn: rightOf(deal.dealer),
-  hands: deal.hands.map((hand, i) => [
+const call = (deal: Deal, seat: Seat, trump: Suit): Deal => {
+  const hands = deal.hands.map((hand, i) => [
     ...hand,
     ...deal.stock.slice(i * 2, i * 2 + 2),
-  ]),
-  stock: [],
-  trump,
-  caller: seat,
-});
+  ]);
+  return {
+    ...deal,
+    phase: 'playing',
+    turn: rightOf(deal.dealer),
+    hands,
+    stock: [],
+    trump,
+    caller: seat,
+    declarations: hands.flatMap((hand, i) =>
+      declarationsOf(i as Seat, hand, trump),
+    ),
+  };
+};
 
 const playCard = (
   state: BelotState,
@@ -210,18 +343,35 @@ const playCard = (
   );
   const trick = [...deal.trick, { seat, card }];
   const events: BelotEvent[] = [{ type: 'played', seat, card }];
+  const pair =
+    card.rank === 'king' ? 'queen' : card.rank === 'queen' ? 'king' : null;
+  const belote =
+    card.suit === deal.trump &&
+    hands[seat]!.some((held) => held.suit === card.suit && held.rank === pair)
+      ? seat
+      : deal.belote;
+  if (belote !== deal.belote) events.push({ type: 'belote', seat });
   if (trick.length < 4) {
     return {
       ok: true,
-      state: { ...state, deal: { ...deal, hands, trick, turn: rightOf(seat) } },
+      state: {
+        ...state,
+        deal: { ...deal, hands, trick, belote, turn: rightOf(seat) },
+      },
       events,
     };
   }
   const winner = best(trick, deal.trump!).seat;
   events.push({ type: 'trickWon', seat: winner });
   const tricks = [...deal.tricks, { plays: trick, winner }];
+  if (tricks.length === 1 && deal.declarations.length > 0) {
+    events.push({ type: 'declared', declarations: deal.declarations });
+  }
   if (tricks.length === 8) {
-    events.push({ type: 'dealScored', score: scoreDeal({ ...deal, tricks }) });
+    events.push({
+      type: 'dealScored',
+      score: scoreDeal({ ...deal, tricks, belote }),
+    });
     const deals = state.deals + 1;
     return {
       ok: true,
@@ -237,7 +387,7 @@ const playCard = (
     ok: true,
     state: {
       ...state,
-      deal: { ...deal, hands, trick: [], tricks, turn: winner },
+      deal: { ...deal, hands, trick: [], tricks, belote, turn: winner },
     },
     events,
   };
@@ -278,6 +428,8 @@ export const belot = {
     trump: state.deal.trump,
     caller: state.deal.caller,
     trick: state.deal.trick,
+    declarations: state.deal.tricks.length > 0 ? state.deal.declarations : [],
+    belote: state.deal.belote,
   }),
   result: () => null,
 } satisfies Ruleset<

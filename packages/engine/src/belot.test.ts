@@ -416,8 +416,7 @@ describe('play', () => {
 
 type Pick = (turn: Turn, n: number) => Card;
 
-const playDeal = (seed: number, pick: Pick) => {
-  const start = called(seed);
+const playDeal = (seed: number, pick: Pick, start = called(seed)) => {
   const caller = belot.view(start, 0).caller!;
   let state = start;
   const events: BelotEvent[] = [];
@@ -473,6 +472,14 @@ const points: Record<string, [number, number]> = {
 
 const sum = ([a, b]: number[]) => a! + b!;
 
+type Score = ReturnType<typeof playDeal>['score'];
+const total = (score: Score, team: number) =>
+  score.cards[team]! +
+  score.lastTrick[team]! +
+  score.sweep[team]! +
+  score.declarations[team]! +
+  score.belote[team]!;
+
 describe('deal scoring', () => {
   test('the eighth trick scores the deal: card values total 152, plus 10 for the last trick', () => {
     const { score, events, winners, start } = playDeal(42, varied(42));
@@ -500,24 +507,19 @@ describe('deal scoring', () => {
   test('a made contract gives each team its own points', () => {
     const { score, callers, others } = findDeal(
       ({ score, callers, others }) =>
-        score.cards[callers]! + score.lastTrick[callers]! >
-          score.cards[others]! + score.lastTrick[others]! &&
+        total(score, callers) > total(score, others) &&
         score.cards[others]! > 0,
     );
     expect(score.failed).toBe(false);
-    expect(score.points[callers]).toBe(
-      score.cards[callers]! + score.lastTrick[callers]!,
-    );
-    expect(score.points[others]).toBe(
-      score.cards[others]! + score.lastTrick[others]!,
-    );
+    expect(score.points[callers]).toBe(total(score, callers));
+    expect(score.points[others]).toBe(total(score, others));
   });
 
   test('a failed contract gives all points of the deal to the other team', () => {
     const { score, callers, others } = findDeal(
       ({ score, callers, others }) =>
-        score.cards[callers]! + score.lastTrick[callers]! <
-        score.cards[others]! + score.lastTrick[others]!,
+        total(score, callers) < total(score, others) &&
+        sum(score.declarations) + sum(score.belote) === 0,
     );
     expect(score.failed).toBe(true);
     expect(score.points[callers]).toBe(0);
@@ -536,7 +538,10 @@ describe('deal scoring', () => {
         return seat % 2 === caller ? sorted.at(-1)! : sorted[0]!;
       };
       const played = playDeal(seed, pick);
-      if (played.winners.every((winner) => winner % 2 === caller))
+      if (
+        played.winners.every((winner) => winner % 2 === caller) &&
+        sum(played.score.declarations) + sum(played.score.belote) === 0
+      )
         deal = played;
     }
     const { score, callers, others } = deal!;
@@ -567,10 +572,365 @@ describe('deal scoring', () => {
   test('an exact tie is a failed contract', () => {
     const { score, callers, others } = findDeal(
       ({ score, callers }) =>
-        score.cards[callers]! + score.lastTrick[callers]! === 81,
+        total(score, callers) === 81 &&
+        sum(score.declarations) + sum(score.belote) === 0,
     );
     expect(score.failed).toBe(true);
     expect(score.points[callers]).toBe(0);
     expect(score.points[others]).toBe(162);
+  });
+});
+
+// Natural rank order for sequences, from lowest to highest.
+const natural = [
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'jack',
+  'queen',
+  'king',
+  'ace',
+];
+const fourOfAKind: Record<string, number> = {
+  jack: 200,
+  nine: 150,
+  ace: 100,
+  ten: 100,
+  king: 100,
+  queen: 100,
+};
+
+type Found = { points: number; length: number; top: number };
+
+// Test-side reading of the declaration rules, used only to pick deals.
+const declarationsIn = (hand: Card[]): Found[] => {
+  const found: Found[] = [];
+  for (const suit of ['clubs', 'diamonds', 'hearts', 'spades']) {
+    let run = 0;
+    for (let i = 0; i <= 8; i++) {
+      if (i < 8 && hand.some((c) => c.suit === suit && c.rank === natural[i])) {
+        run++;
+        continue;
+      }
+      if (run >= 3) {
+        const points = run === 3 ? 20 : run === 4 ? 50 : 100;
+        found.push({ points, length: run, top: i - 1 });
+      }
+      run = 0;
+    }
+  }
+  for (const [rank, points] of Object.entries(fourOfAKind)) {
+    if (hand.filter((card) => card.rank === rank).length === 4) {
+      found.push({ points, length: 4, top: natural.indexOf(rank) });
+    }
+  }
+  return found;
+};
+
+const handsAt = (seed: number) => {
+  const state = called(seed);
+  return {
+    state,
+    dealer: belot.view(state, 0).dealer,
+    hands: seats.map((seat) => belot.view(state, seat).hand),
+  };
+};
+
+const findHands = (
+  match: (deal: ReturnType<typeof handsAt>) => boolean,
+): ReturnType<typeof handsAt> & { seed: number } => {
+  for (let seed = 0; seed < 50000; seed++) {
+    const deal = handsAt(seed);
+    if (match(deal)) return { ...deal, seed };
+  }
+  throw new Error('no matching hands');
+};
+
+const playFirstTrick = (start: BelotState) => {
+  let state = start;
+  const events: BelotEvent[] = [];
+  for (let n = 0; n < 4; n++) {
+    const turn = turnAt(state);
+    const applied = belot.apply(state, turn.seat, {
+      type: 'play',
+      card: turn.legal[0]!,
+    });
+    if (!applied.ok) throw new Error(applied.reason);
+    state = applied.state;
+    events.push(...applied.events);
+  }
+  return { state, events };
+};
+
+const holdsFour = (hand: Card[], ranks: string[]) =>
+  ranks.some((rank) => hand.filter((card) => card.rank === rank).length === 4);
+
+describe('declarations', () => {
+  test('declarations are announced after the first trick and every seat sees them', () => {
+    const { state } = findHands(({ hands }) =>
+      hands.some((hand) => declarationsIn(hand).length > 0),
+    );
+    for (const seat of seats) {
+      expect(belot.view(state, seat).declarations).toEqual([]);
+    }
+    const after = playFirstTrick(state);
+    const declared = after.events.find((event) => event.type === 'declared');
+    if (declared?.type !== 'declared') throw new Error('nothing declared');
+    expect(declared.declarations.length).toBeGreaterThan(0);
+    for (const seat of seats) {
+      expect(belot.view(after.state, seat).declarations).toEqual(
+        declared.declarations,
+      );
+    }
+  });
+
+  test.each([
+    ['a sequence of three', 'sequence', 20, 3, null],
+    ['a sequence of four', 'sequence', 50, 4, null],
+    ['a sequence of five', 'sequence', 100, 5, null],
+    ['a sequence of six', 'sequence', 100, 6, null],
+    ['four jacks', 'fourOfAKind', 200, 4, 'jack'],
+    ['four nines', 'fourOfAKind', 150, 4, 'nine'],
+    ['four aces', 'fourOfAKind', 100, 4, 'ace'],
+    ['four tens', 'fourOfAKind', 100, 4, 'ten'],
+    ['four kings', 'fourOfAKind', 100, 4, 'king'],
+    ['four queens', 'fourOfAKind', 100, 4, 'queen'],
+  ] as const)('%s is worth its value', (_, kind, points, length, rank) => {
+    const match = (hand: Card[]) => {
+      const found = declarationsIn(hand);
+      return (
+        found.length === 1 &&
+        found[0]!.length === length &&
+        (rank ? holdsFour(hand, [rank]) : !holdsFour(hand, natural))
+      );
+    };
+    const { state, hands } = findHands(({ hands }) => hands.some(match));
+    const seat = seats.find((seat) => match(hands[seat]!))!;
+    const { declarations } = belot.view(playFirstTrick(state).state, seat);
+    expect(declarations.filter((d) => d.seat === seat)).toMatchObject([
+      { seat, kind, points },
+    ]);
+  });
+
+  test('four sevens and four eights are not declarations', () => {
+    const match = (hand: Card[]) =>
+      declarationsIn(hand).length === 0 && holdsFour(hand, ['seven', 'eight']);
+    const { state, hands } = findHands(({ hands }) => hands.some(match));
+    const seat = seats.find((seat) => match(hands[seat]!))!;
+    const { declarations } = belot.view(playFirstTrick(state).state, seat);
+    expect(declarations.filter((d) => d.seat === seat)).toEqual([]);
+  });
+});
+
+type Contender = Found & { seat: Seat };
+
+// Tie-break steps in order: value, length, top card, closest to the dealer's right.
+const steps = [
+  (d: Contender) => d.points,
+  (d: Contender) => d.length,
+  (d: Contender) => d.top,
+  (d: Contender, dealer: Seat) => -((d.seat - dealer + 3) % 4),
+];
+
+// Finds a deal where both teams are still level before `step` and that step
+// leaves one team. Returns the team the step picks.
+const findContest = (step: number) => {
+  let winner = -1;
+  const deal = findHands(({ hands, dealer }) => {
+    let left: Contender[] = hands.flatMap((hand, seat) =>
+      declarationsIn(hand).map((d) => ({ ...d, seat: seat as Seat })),
+    );
+    for (let i = 0; i <= step; i++) {
+      if (i === step && new Set(left.map((d) => d.seat % 2)).size < 2) {
+        return false;
+      }
+      const top = Math.max(...left.map((d) => steps[i]!(d, dealer)));
+      left = left.filter((d) => steps[i]!(d, dealer) === top);
+    }
+    const teams = new Set(left.map((d) => d.seat % 2));
+    winner = [...teams][0]!;
+    return teams.size === 1;
+  });
+  return { ...playDeal(deal.seed, varied(deal.seed)), winner };
+};
+
+const declaredIn = (events: BelotEvent[]) =>
+  events.flatMap((event) =>
+    event.type === 'declared' ? event.declarations : [],
+  );
+
+describe('declaration comparison', () => {
+  test('only the team with the highest declaration scores, and all of its declarations count', () => {
+    const deal = findHands(({ hands }) => {
+      const team = (t: number) =>
+        hands.flatMap((hand, seat) =>
+          seat % 2 === t ? declarationsIn(hand) : [],
+        );
+      const best = (t: number) => Math.max(...team(t).map((d) => d.points));
+      return team(0).length >= 2 && team(1).length >= 1 && best(0) > best(1);
+    });
+    const { score, events } = playDeal(deal.seed, varied(deal.seed));
+    const declared = declaredIn(events);
+    const ours = declared.filter((d) => d.seat % 2 === 0);
+    expect(ours.length).toBeGreaterThanOrEqual(2);
+    expect(score.declarations).toEqual([
+      ours.reduce((points, d) => points + d.points, 0),
+      0,
+    ]);
+  });
+
+  test.each([
+    ['higher value', 0],
+    ['equal value, the longer declaration', 1],
+    ['equal value and length, the higher top card', 2],
+    ['a full tie, the seat closest to the dealer right', 3],
+  ])('%s wins', (_, step) => {
+    const { score, events, winner } = findContest(step);
+    const sumOf = (team: number) =>
+      declaredIn(events)
+        .filter((d) => d.seat % 2 === team)
+        .reduce((points, d) => points + d.points, 0);
+    expect(score.declarations[winner]).toBe(sumOf(winner));
+    expect(score.declarations[1 - winner]).toBe(0);
+    expect(sumOf(1 - winner)).toBeGreaterThan(0);
+  });
+});
+
+const holdsBelote = (hand: Card[], trump: Suit) =>
+  ['king', 'queen'].every((rank) =>
+    hand.some((card) => card.suit === trump && card.rank === rank),
+  );
+
+const beloteSeat = ({ state, hands }: ReturnType<typeof handsAt>) => {
+  const trump = belot.view(state, 0).trump!;
+  return seats.find((seat) => holdsBelote(hands[seat]!, trump));
+};
+
+describe('belote', () => {
+  test('the belote is announced when the first of king and queen of trump is played', () => {
+    const deal = findHands((deal) => beloteSeat(deal) !== undefined);
+    const holder = beloteSeat(deal)!;
+    const trump = belot.view(deal.state, 0).trump!;
+    let state = deal.state;
+    for (let n = 0; ; n++) {
+      for (const seat of seats)
+        expect(belot.view(state, seat).belote).toBe(null);
+      const turn = turnAt(state);
+      const card = varied(deal.seed)(turn, n);
+      const applied = belot.apply(state, turn.seat, { type: 'play', card });
+      if (!applied.ok) throw new Error(applied.reason);
+      state = applied.state;
+      const first =
+        turn.seat === holder &&
+        card.suit === trump &&
+        (card.rank === 'king' || card.rank === 'queen');
+      if (!first) {
+        expect(applied.events).not.toContainEqual({
+          type: 'belote',
+          seat: holder,
+        });
+        continue;
+      }
+      expect(applied.events.slice(0, 2)).toEqual([
+        { type: 'played', seat: holder, card },
+        { type: 'belote', seat: holder },
+      ]);
+      for (const seat of seats) {
+        expect(belot.view(state, seat).belote).toBe(holder);
+      }
+      break;
+    }
+  });
+
+  test('the belote counts 20 for its team even when the other team has the highest declaration', () => {
+    const deal = findHands((deal) => {
+      const holder = beloteSeat(deal);
+      if (holder === undefined) return false;
+      const team = (t: number) =>
+        deal.hands.flatMap((hand, seat) =>
+          seat % 2 === t ? declarationsIn(hand) : [],
+        );
+      return team(holder % 2).length === 0 && team(1 - (holder % 2)).length > 0;
+    });
+    const team = beloteSeat(deal)! % 2;
+    const { score } = playDeal(deal.seed, varied(deal.seed));
+    expect(score.belote[team]).toBe(20);
+    expect(score.belote[1 - team]).toBe(0);
+    expect(score.declarations[team]).toBe(0);
+    expect(score.declarations[1 - team]).toBeGreaterThan(0);
+  });
+
+  test('without a belote no team gets its 20 points', () => {
+    const deal = findHands((deal) => beloteSeat(deal) === undefined);
+    const { score, events } = playDeal(deal.seed, varied(deal.seed));
+    expect(score.belote).toEqual([0, 0]);
+    expect(events.some((event) => event.type === 'belote')).toBe(false);
+  });
+});
+
+describe('declarations and the contract', () => {
+  const inPlay = (score: Score, team: number) =>
+    score.cards[team]! + score.lastTrick[team]! + score.sweep[team]!;
+
+  test("the other team's declarations can make the contract fail", () => {
+    const { score, callers, others } = findDeal(
+      ({ score, callers, others }) =>
+        inPlay(score, callers) > inPlay(score, others) &&
+        total(score, callers) <= total(score, others),
+    );
+    expect(score.declarations[others]! + score.belote[others]!).toBeGreaterThan(
+      0,
+    );
+    expect(score.failed).toBe(true);
+    expect(score.points[callers]).toBe(0);
+    expect(score.points[others]).toBe(
+      total(score, callers) + total(score, others),
+    );
+  });
+
+  test("the calling team's declarations can make the contract", () => {
+    const { score, callers, others } = findDeal(
+      ({ score, callers, others }) =>
+        inPlay(score, callers) <= inPlay(score, others) &&
+        total(score, callers) > total(score, others),
+    );
+    expect(score.failed).toBe(false);
+    expect(score.points[callers]).toBe(total(score, callers));
+    expect(score.points[others]).toBe(total(score, others));
+  });
+});
+
+describe('full sequence', () => {
+  // Seed 372322 deals all eight spades to seat 3.
+  const seed = 372322;
+  const calling = (suit: Suit) => {
+    const state = belot.setup(variant, 4, seed);
+    const speaker = rightOf(belot.view(state, 0).dealer);
+    return play(state, speaker, { type: 'call', suit });
+  };
+
+  test('seat 3 holds all eight spades', () => {
+    const hand = belot.view(calling('spades'), 3).hand;
+    expect(hand.every((card) => card.suit === 'spades')).toBe(true);
+  });
+
+  test('eight cards of a non-trump suit are a declaration worth 120', () => {
+    const { score, events } = playDeal(seed, varied(seed), calling('hearts'));
+    expect(declaredIn(events)).toContainEqual(
+      expect.objectContaining({ seat: 3, kind: 'fullSequence', points: 120 }),
+    );
+    expect(score.declarations[1]).toBeGreaterThanOrEqual(120);
+    expect(score.winsMatch).toBe(null);
+  });
+
+  test('eight trumps win the match for their team', () => {
+    const { score } = playDeal(seed, varied(seed), calling('spades'));
+    expect(score.winsMatch).toBe(1);
+  });
+
+  test('no full sequence wins no match', () => {
+    const { score } = playDeal(42, varied(42));
+    expect(score.winsMatch).toBe(null);
   });
 });
