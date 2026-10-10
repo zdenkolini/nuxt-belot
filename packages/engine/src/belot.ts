@@ -442,7 +442,7 @@ const playCard = (
 };
 
 export const belot = {
-  setup: (variant: BelotVariant, _seats: number, seed: string): BelotState => {
+  setup: (variant: BelotVariant, seed: string): BelotState => {
     const [dealers, afterDealer] = shuffle([0, 1, 2, 3] as const, seeded(seed));
     const [deal, random] = startDeal(dealers[0]!, afterDealer);
     return { variant, random, deals: 0, scores: [0, 0], result: null, deal };

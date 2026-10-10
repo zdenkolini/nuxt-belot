@@ -92,7 +92,7 @@ export const createPlay = async (
       .where(eq(moves.matchId, saved.id))
       .orderBy(asc(moves.index))) as Logged<BelotMove>[];
     const variant = saved.variant as BelotVariant;
-    const rebuilt = replay(belot, variant, 4, saved.seed, log);
+    const rebuilt = replay(belot, variant, saved.seed, log);
     if (!rebuilt.ok) throw new Error(`match ${saved.id}: ${rebuilt.reason}`);
     matches.set(saved.roomId!, {
       id: saved.id,
@@ -185,7 +185,7 @@ export const createPlay = async (
         seats: seatedUsers,
         usernames: await usernamesOf(seatedUsers),
         log: [],
-        state: belot.setup(variant, 4, seed),
+        state: belot.setup(variant, seed),
       };
       matches.set(roomId, match);
       return views(roomId, match, []);
