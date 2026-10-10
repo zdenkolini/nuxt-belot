@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { createQuery } from '@tanstack/svelte-query';
+	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { m } from '#lib/paraglide/messages.js';
 
 	const health = api.health.get();
+	const me = createQuery(() => meQuery);
 </script>
 
 <svelte:head>
@@ -25,5 +29,11 @@
 				<p>{m.health_down()}</p>
 			{/await}
 		</Card.Content>
+		{#if me.data?.username}
+			<Card.Footer class="flex justify-between gap-2 text-sm">
+				<span>{m.signed_in_as({ username: me.data.username })}</span>
+				<a class="underline" href={resolve('/account')}>{m.account_link()}</a>
+			</Card.Footer>
+		{/if}
 	</Card.Root>
 </main>

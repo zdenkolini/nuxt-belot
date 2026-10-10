@@ -10,7 +10,10 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@belot/db": "workspace:*",
     "@elysiajs/cors": "catalog:",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
     "elysia": "catalog:"
   },
   "devDependencies": {
