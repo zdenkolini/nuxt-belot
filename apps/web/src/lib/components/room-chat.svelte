@@ -54,7 +54,7 @@
 					<Button
 						size="xs"
 						variant="ghost"
-						onclick={() => send({ type: 'chat.mute', playerId: message.from })}
+						onclick={() => send({ type: 'chat.mute', userId: message.from })}
 					>
 						{m.mute()}
 					</Button>
@@ -66,13 +66,13 @@
 	</ul>
 	{#if muted.length}
 		<ul class="flex flex-wrap gap-2 text-sm text-muted-foreground">
-			{#each muted as playerId (playerId)}
+			{#each muted as userId (userId)}
 				<li class="flex items-center gap-1">
-					{m.muted_player({ username: usernameOf(playerId) })}
+					{m.muted_player({ username: usernameOf(userId) })}
 					<Button
 						size="xs"
 						variant="outline"
-						onclick={() => send({ type: 'chat.unmute', playerId })}
+						onclick={() => send({ type: 'chat.unmute', userId })}
 					>
 						{m.unmute()}
 					</Button>

@@ -1,3 +1,5 @@
+import type { Member } from './session';
+
 export type ChatMessage = {
   id: string;
   from: string;
@@ -14,8 +16,8 @@ export type ChatServerMessage =
 // What a player sends about chat over the room socket.
 export type ChatIntent =
   | { type: 'chat.send'; text: string }
-  | { type: 'chat.mute'; playerId: string }
-  | { type: 'chat.unmute'; playerId: string }
+  | { type: 'chat.mute'; userId: string }
+  | { type: 'chat.unmute'; userId: string }
   | { type: 'chat.history' };
 
 type Recipient = { userId: string; send: (message: ChatServerMessage) => void };
@@ -49,12 +51,11 @@ export const createChat = () => {
   // Handles a chat intent from a member's socket; `recipients` are the open
   // sockets of everyone in the room.
   const handle = (
-    roomId: string,
-    socket: Recipient,
+    socket: Member & Recipient,
     intent: ChatIntent,
     recipients: Recipient[],
   ) => {
-    const from = socket.userId;
+    const { roomId, userId: from } = socket;
     if (intent.type === 'chat.history')
       return socket.send(history(roomId, from));
     if (intent.type === 'chat.send') {
@@ -71,8 +72,8 @@ export const createChat = () => {
       return;
     }
     const muted = mutedBy(roomId, from);
-    if (intent.type === 'chat.mute') muted.add(intent.playerId);
-    else if (intent.type === 'chat.unmute') muted.delete(intent.playerId);
+    if (intent.type === 'chat.mute') muted.add(intent.userId);
+    else if (intent.type === 'chat.unmute') muted.delete(intent.userId);
     else return;
     for (const r of recipients) {
       if (r.userId === from) r.send(history(roomId, from));

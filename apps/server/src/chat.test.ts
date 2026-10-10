@@ -44,7 +44,7 @@ test('mute hides a player for the muting player only; unmute restores them', asy
   await bob.socket.next();
   await cara.socket.next();
 
-  bob.socket.send({ type: 'chat.mute', playerId: ana.id });
+  bob.socket.send({ type: 'chat.mute', userId: ana.id });
   expect(await bob.socket.next()).toEqual({
     type: 'chat.history',
     messages: [],
@@ -60,7 +60,7 @@ test('mute hides a player for the muting player only; unmute restores them', asy
     message: { from: cara.id, text: 'he muted you' },
   });
 
-  bob.socket.send({ type: 'chat.unmute', playerId: ana.id });
+  bob.socket.send({ type: 'chat.unmute', userId: ana.id });
   expect(await bob.socket.next()).toMatchObject({
     type: 'chat.history',
     messages: [
@@ -74,7 +74,7 @@ test('mute hides a player for the muting player only; unmute restores them', asy
 
 test('a newly opened room socket asks for recent chat, still without muted players', async () => {
   const { roomId, connect, ana, bob, cara } = await chatRoom();
-  bob.socket.send({ type: 'chat.mute', playerId: cara.id });
+  bob.socket.send({ type: 'chat.mute', userId: cara.id });
   await bob.socket.next();
   ana.socket.send({ type: 'chat.send', text: 'one' });
   cara.socket.send({ type: 'chat.send', text: 'two' });

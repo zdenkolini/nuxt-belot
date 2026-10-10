@@ -161,12 +161,12 @@ test('the room owner removes a player, who cannot come back', async () => {
   await bobSocket.next();
   await caraSocket.next();
 
-  const denied = await room.members({ memberId: bob!.id }).delete({}, cara);
+  const denied = await room.members({ userId: bob!.id }).delete({}, cara);
   expect(denied.status).toBe(403);
 
-  expect(
-    (await room.members({ memberId: bob!.id }).delete({}, ana)).status,
-  ).toBe(200);
+  expect((await room.members({ userId: bob!.id }).delete({}, ana)).status).toBe(
+    200,
+  );
   expect(await bobSocket.next()).toEqual({ type: 'removed' });
   expect(await bobSocket.next()).toBeUndefined();
   expect(await caraSocket.next()).toMatchObject({

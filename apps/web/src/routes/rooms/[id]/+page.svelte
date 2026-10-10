@@ -238,7 +238,7 @@
 									<Button
 										size="xs"
 										variant="destructive"
-										onclick={() => act(room$.members({ memberId: member.id }).delete({}))}
+										onclick={() => act(room$.members({ userId: member.id }).delete({}))}
 									>
 										{m.remove_player()}
 									</Button>

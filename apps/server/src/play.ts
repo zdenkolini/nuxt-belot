@@ -12,6 +12,7 @@ import {
   type Seat,
 } from '@belot/engine';
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import type { Member } from './session';
 
 // What one seat sees of the match. `players` are by seat, also those who
 // left the room. `events` are those of the last move. `missing` holds the user ids of seated players who are not connected; the
@@ -192,7 +193,7 @@ export const createPlay = async (
     },
 
     // `move` comes from a client and may have any shape.
-    move: async (roomId: string, userId: string, move: object) => {
+    move: async ({ roomId, userId }: Member, move: object) => {
       const match = matches.get(roomId);
       if (!match) return { ok: false, reason: 'no_match' } as const;
       const index = match.seats.indexOf(userId);
@@ -226,7 +227,7 @@ export const createPlay = async (
     },
 
     // Any seated player may end a paused match for everyone.
-    end: async (roomId: string, userId: string) => {
+    end: async ({ roomId, userId }: Member) => {
       const match = matches.get(roomId);
       if (!match || isOver(match)) {
         return { ok: false, reason: 'no_match' } as const;
@@ -252,13 +253,13 @@ export const createPlay = async (
     },
 
     // The current match message for one user, if they have a seat in it.
-    viewFor: (roomId: string, userId: string): MatchMessage | undefined => {
+    viewFor: ({ roomId, userId }: Member): MatchMessage | undefined => {
       const match = matches.get(roomId);
       return match && views(roomId, match, []).get(userId);
     },
 
     // The user's seat in the room's unfinished match, if they have one.
-    seatOf: (roomId: string, userId: string) => {
+    seatOf: ({ roomId, userId }: Member) => {
       const match = matches.get(roomId);
       const seat = match && !isOver(match) ? match.seats.indexOf(userId) : -1;
       return seat < 0 ? undefined : seat;

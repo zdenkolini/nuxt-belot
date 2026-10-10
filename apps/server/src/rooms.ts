@@ -4,7 +4,7 @@ import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
 import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
 import { createPlay, type MatchIntent, type MatchMessage } from './play';
-import type { Session } from './session';
+import type { Member, Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
 
@@ -32,8 +32,7 @@ export type RoomMessage =
   | MatchMessage
   | ChatServerMessage;
 
-type Socket = {
-  userId: string;
+type Socket = Member & {
   send: (message: RoomMessage) => void;
   close: () => void;
 };
@@ -217,7 +216,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
             return fail(403, 'removed_from_room');
           if (!room.members.includes(userId)) room.members.push(userId);
           // A player who left mid-match takes their seat back.
-          const seat = play.seatOf(room.id, userId);
+          const seat = play.seatOf({ roomId: room.id, userId });
           if (seat !== undefined) room.seats[seat] = userId;
         });
         return result.ok ? result.room : result.failure;
@@ -292,26 +291,26 @@ export const roomRoutes = async (db: Db, session: Session) => {
       },
     )
     .delete(
-      '/:id/members/:memberId',
-      async ({ userId, params: { id, memberId } }) => {
+      '/:id/members/:userId',
+      async ({ userId, params: { id, userId: member } }) => {
         const result = await update(id, (room) => {
           const failure = notOwner(room, userId);
           if (failure) return failure;
-          if (memberId === userId || !room.members.includes(memberId)) {
+          if (member === userId || !room.members.includes(member)) {
             return fail(404, 'member_not_found');
           }
-          leave(room, memberId);
-          room.removed.push(memberId);
+          leave(room, member);
+          room.removed.push(member);
         });
         if (!result.ok) return result.failure;
-        disconnect(id, memberId, { type: 'removed' });
+        disconnect(id, member, { type: 'removed' });
         return result.room;
       },
       {
         player: true,
         params: t.Object({
           id: t.String({ format: 'uuid' }),
-          memberId: t.String(),
+          userId: t.String(),
         }),
       },
     )
@@ -344,6 +343,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           if (!room || !room.members.includes(userId))
             return ws.close(4403, 'not_a_member');
           const socket: Socket = {
+            roomId: params.id,
             userId,
             send: (message) => ws.send(JSON.stringify(message)),
             close: () => ws.close(),
@@ -352,10 +352,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
           sockets.set(params.id, roomSockets.set(ws.id, socket));
           socket.send({ type: 'room', room: await view(room) });
           // A seated player coming back may end the pause for everyone.
-          if (play.seatOf(params.id, userId) !== undefined) {
+          if (play.seatOf(socket) !== undefined) {
             sendEach(params.id, play.viewsOf(params.id));
           } else {
-            const match = play.viewFor(params.id, userId);
+            const match = play.viewFor(socket);
             if (match) socket.send(match);
           }
         };
@@ -375,18 +375,12 @@ export const roomRoutes = async (db: Db, session: Session) => {
         if (intent?.type === 'match.move' || intent?.type === 'match.end') {
           const done =
             intent.type === 'match.move'
-              ? await play.move(
-                  ws.data.params.id,
-                  socket.userId,
-                  intent.move ?? {},
-                )
-              : await play.end(ws.data.params.id, socket.userId);
-          if (done.ok) sendEach(ws.data.params.id, done.views);
+              ? await play.move(socket, intent.move ?? {})
+              : await play.end(socket);
+          if (done.ok) sendEach(socket.roomId, done.views);
           else socket.send({ type: 'match.rejected', reason: done.reason });
         } else if (String(intent?.type).startsWith('chat.')) {
-          chat.handle(ws.data.params.id, socket, intent as ChatIntent, [
-            ...roomSockets.values(),
-          ]);
+          chat.handle(socket, intent as ChatIntent, [...roomSockets.values()]);
         }
       },
       async close(ws) {
@@ -395,7 +389,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         opening.delete(ws.id);
         sockets.get(params.id)?.delete(ws.id);
         // A seated player gone pauses the match for everyone.
-        if (play.seatOf(params.id, userId) !== undefined) {
+        if (play.seatOf({ roomId: params.id, userId }) !== undefined) {
           sendEach(params.id, play.viewsOf(params.id));
         }
       },

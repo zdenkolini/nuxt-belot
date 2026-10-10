@@ -26,3 +26,6 @@ export const createSession = (auth: ReturnType<typeof createAuth>) =>
   });
 
 export type Session = ReturnType<typeof createSession>;
+
+// A signed-in user in one room.
+export type Member = { roomId: string; userId: string };
