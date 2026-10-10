@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "dev": "bun run --parallel --filter '@belot/server' --filter '@belot/web' dev",
     "test": "bun --filter '*' test",
     "typecheck": "bun --filter '*' typecheck",
     "prepare": "husky"
