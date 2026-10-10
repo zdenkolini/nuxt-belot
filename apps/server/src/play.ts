@@ -36,8 +36,6 @@ export type MatchMessage =
 export type MatchIntent =
   { type: 'match.move'; move: BelotMove } | { type: 'match.end' };
 
-type Untrusted = { type: unknown; suit: unknown; card?: { id?: unknown } };
-
 export type MoveRejection =
   | 'no_match'
   | 'not_seated'
@@ -194,7 +192,7 @@ export const createPlay = async (
     },
 
     // `move` comes from a client and may have any shape.
-    move: async (roomId: string, userId: string, move: Partial<Untrusted>) => {
+    move: async (roomId: string, userId: string, move: object) => {
       const match = matches.get(roomId);
       if (!match) return { ok: false, reason: 'no_match' } as const;
       const index = match.seats.indexOf(userId);
@@ -207,22 +205,15 @@ export const createPlay = async (
       if (legal.length === 0) {
         return { ok: false, reason: 'not_your_turn' } as const;
       }
-      const chosen = legal.find(
-        (l) =>
-          l.type === move.type &&
-          (l.type !== 'call' || l.suit === move.suit) &&
-          (l.type !== 'play' || l.card.id === move.card?.id),
-      );
-      if (!chosen) return { ok: false, reason: 'illegal_move' } as const;
-      const applied = belot.apply(match.state, seat, chosen);
-      if (!applied.ok) throw new Error(applied.reason);
+      const applied = belot.apply(match.state, seat, move as BelotMove);
+      if (!applied.ok) return { ok: false, reason: 'illegal_move' } as const;
       match.state = applied.state;
-      match.log.push({ seat, move: chosen });
+      match.log.push({ seat, move: move as BelotMove });
       await db.insert(moves).values({
         matchId: match.id,
         index: match.log.length - 1,
         seat,
-        move: chosen,
+        move,
       });
       const result = belot.result(match.state);
       if (result) {

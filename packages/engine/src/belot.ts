@@ -321,9 +321,10 @@ const legalMoves = (state: BelotState, seat: Seat): BelotMove[] => {
   return seat === dealer ? calls : [{ type: 'pass' }, ...calls];
 };
 
+// `b` may come from a client in any shape.
 const sameMove = (a: BelotMove, b: BelotMove) => {
   if (a.type === 'call') return b.type === 'call' && a.suit === b.suit;
-  if (a.type === 'play') return b.type === 'play' && a.card.id === b.card.id;
+  if (a.type === 'play') return b.type === 'play' && a.card.id === b.card?.id;
   return a.type === b.type;
 };
 
