@@ -94,3 +94,4 @@ sw.*
 .svelte-kit/
 apps/web/build/
 .claude/worktrees/
+.data/
