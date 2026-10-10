@@ -5,8 +5,7 @@ import type { Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
 
-export const targetScores = [501, 701, 1001] as const;
-export type TargetScore = (typeof targetScores)[number];
+export type TargetScore = 501 | 701 | 1001;
 
 export type RoomView = {
   id: string;

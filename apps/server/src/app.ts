@@ -8,7 +8,6 @@ import { createSession } from './session';
 
 export type { Email } from './auth';
 export type { PublicRoom, RoomMessage, RoomView, TargetScore } from './rooms';
-export { targetScores } from './rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 
