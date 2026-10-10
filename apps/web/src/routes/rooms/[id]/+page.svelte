@@ -3,11 +3,13 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
-	import type { RoomMessage, RoomView, TargetScore } from '@belot/server';
+	import type { BelotMove, DealScore, Play, Seat } from '@belot/engine';
+	import type { MatchView, RoomMessage, RoomView, TargetScore } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
+	import MatchTable from '#lib/components/table/match-table.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
 	const targetScores: TargetScore[] = [501, 701, 1001];
@@ -18,6 +20,31 @@
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
 	let notice = $state<string | null>(null);
+	// Replaced wholesale by each match view the server sends.
+	let match = $state<MatchView | null>(null);
+	let lastTrick = $state<{ plays: Play[]; winner: Seat } | null>(null);
+	let dealScore = $state<DealScore | null>(null);
+	let sendMove: ((move: BelotMove) => void) | undefined;
+
+	const onMatch = (next: MatchView) => {
+		if (match?.result && !next.result) {
+			lastTrick = null;
+			dealScore = null;
+		}
+		for (const event of next.events) {
+			if (event.type === 'trickWon') {
+				const played = next.events.find((e) => e.type === 'played');
+				const plays =
+					match && played
+						? [...match.view.trick, { seat: played.seat, card: played.card }]
+						: [];
+				lastTrick = { plays, winner: event.seat };
+			}
+			if (event.type === 'dealScored') dealScore = event.score;
+		}
+		if (next.view.trick.length > 0) lastTrick = null;
+		match = next;
+	};
 
 	$effect(() => {
 		const roomId = id;
@@ -35,8 +62,11 @@
 			ws.subscribe(({ data }) => {
 				const message = data as RoomMessage;
 				if (message.type === 'room') room = message.room;
-				else closedReason = m.removed_from_room;
+				else if (message.type === 'match') onMatch(message.match);
+				else if (message.type === 'match:rejected') notice = m.move_rejected();
+				else if (message.type === 'removed') closedReason = m.removed_from_room;
 			});
+			sendMove = (move) => ws?.send({ type: 'match:move', move });
 		})();
 		return () => {
 			stopped = true;
@@ -50,10 +80,19 @@
 		room?.members.find((member) => member.id === userId)?.username ?? '';
 
 	// Room changes come back over the socket; only failures need handling here.
-	const act = async (request: Promise<{ error: { status: unknown } | null }>) => {
+	const act = async (
+		request: Promise<{ error: { status: unknown; value: unknown } | null }>,
+	) => {
 		notice = null;
 		const { error } = await request;
-		if (error) notice = error.status === 409 ? m.seat_taken() : m.room_action_failed();
+		if (!error) return;
+		const value = error.value as { error?: string } | undefined;
+		notice =
+			value?.error === 'match_running'
+				? m.match_running()
+				: error.status === 409
+					? m.seat_taken()
+					: m.room_action_failed();
 	};
 
 	const room$ = $derived(api.rooms({ id }));
@@ -63,10 +102,17 @@
 		notice = m.invite_link_copied();
 	};
 
-	const start = async () => {
+	const start = () => act(room$.start.post({}));
+
+	const move = (next: BelotMove) => {
 		notice = null;
-		const { error } = await room$.start.post({});
-		notice = error ? m.room_action_failed() : m.match_not_ready();
+		sendMove?.(next);
+	};
+
+	const backToRoom = () => {
+		match = null;
+		lastTrick = null;
+		dealScore = null;
 	};
 
 	const leaveRoom = async () => {
@@ -79,6 +125,24 @@
 	<title>{m.room_title()} · {m.app_title()}</title>
 </svelte:head>
 
+{#if room && match && !closedReason}
+	<MatchTable
+		{match}
+		{room}
+		{lastTrick}
+		{dealScore}
+		{isOwner}
+		onmove={move}
+		ondismissscore={() => (dealScore = null)}
+		onplayagain={start}
+		onback={backToRoom}
+	/>
+	{#if notice}
+		<p class="fixed inset-x-0 top-2 z-20 mx-auto w-fit rounded-md bg-foreground px-3 py-1 text-sm text-background" role="status">
+			{notice}
+		</p>
+	{/if}
+{:else}
 <main class="flex min-h-svh items-center justify-center p-4">
 	<Card.Root class="w-full max-w-lg">
 		<Card.Header>
@@ -183,3 +247,4 @@
 		</Card.Content>
 	</Card.Root>
 </main>
+{/if}
