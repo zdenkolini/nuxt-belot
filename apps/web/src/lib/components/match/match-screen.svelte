@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import type { BelotMove, DealScore, Seat, Team, Trick } from '@belot/engine';
+	import { teamOf, type BelotMove, type DealScore, type Seat, type Team, type Trick } from '@belot/engine';
 	import type { MatchView, RoomView } from '@belot/server';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -36,7 +36,7 @@
 	} = $props();
 
 	const view = $derived(match.view);
-	const myTeam = $derived((match.seat % 2) as Team);
+	const myTeam = $derived(teamOf(match.seat));
 	const usernameOf = (seat: Seat) => match.players[seat]?.username ?? '';
 	// Seats from my point of view: 0 me, 1 right, 2 top, 3 left.
 	const at = (offset: number) => ((match.seat + offset) % 4) as Seat;

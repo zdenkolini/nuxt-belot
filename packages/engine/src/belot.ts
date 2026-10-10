@@ -163,7 +163,7 @@ const cardPoints: Record<Card['rank'], [plain: number, trump: number]> = {
   ace: [11, 11],
 };
 
-const teamOf = (seat: Seat) => (seat % 2) as Team;
+export const teamOf = (seat: Seat) => (seat % 2) as Team;
 
 // Ties break by value, then length, then top card, then the seat closest
 // to the dealer's right. A sequence's top card is in natural order; a four

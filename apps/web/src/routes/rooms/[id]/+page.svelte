@@ -3,7 +3,14 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { targetScores, type BelotMove, type DealScore, type Trick } from '@belot/engine';
+	import {
+		targetScores,
+		teamOf,
+		type BelotMove,
+		type DealScore,
+		type Seat,
+		type Trick,
+	} from '@belot/engine';
 	import type { MatchView, RoomMessage, RoomView } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api, type RoomSocket } from '#lib/api.js';
@@ -205,7 +212,7 @@
 					{#each room.seats as userId, seat (seat)}
 						<li class="flex flex-col gap-1 rounded-lg border p-3 text-sm">
 							<span class="text-muted-foreground">
-								{m.seat_number({ number: seat + 1 })} · {m.team_number({ number: (seat % 2) + 1 })}
+								{m.seat_number({ number: seat + 1 })} · {m.team_number({ number: teamOf(seat as Seat) + 1 })}
 							</span>
 							<span class="font-medium">{userId ? usernameOf(userId) : m.free_seat()}</span>
 							{#if userId === null}
