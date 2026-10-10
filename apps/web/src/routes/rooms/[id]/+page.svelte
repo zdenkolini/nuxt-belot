@@ -6,7 +6,7 @@
 	import { targetScores, type BelotMove, type DealScore, type Play, type Seat } from '@belot/engine';
 	import type { MatchView, RoomMessage, RoomView } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
-	import { api } from '#lib/api.js';
+	import { api, type RoomSocket } from '#lib/api.js';
 	import RoomChat from '#lib/components/room-chat.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -22,7 +22,7 @@
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
 	let notice = $state<string | null>(null);
-	let socket = $state<ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']> | null>(null);
+	let socket = $state<RoomSocket | null>(null);
 	// Replaced wholesale by each match view the server sends.
 	let match = $state<MatchView | null>(null);
 	let lastTrick = $state<{ plays: Play[]; winner: Seat } | null>(null);
@@ -52,7 +52,7 @@
 
 	$effect(() => {
 		const roomId = id;
-		let ws: ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']> | undefined;
+		let ws: RoomSocket | undefined;
 		let stopped = false;
 		(async () => {
 			const { data, error } = await api.rooms({ id: roomId }).join.post({});

@@ -1,12 +1,10 @@
 <script lang="ts">
 	import type { ChatIntent, ChatMessage, RoomMessage, RoomView } from '@belot/server';
-	import type { api } from '#lib/api.js';
+	import type { RoomSocket } from '#lib/api.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { usernameIn } from '#lib/players.js';
-
-	type RoomSocket = ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']>;
 
 	let {
 		socket,
