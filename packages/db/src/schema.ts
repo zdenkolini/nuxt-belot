@@ -1,9 +1,11 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -23,6 +25,35 @@ export const rooms = pgTable('rooms', {
   seats: jsonb().$type<(string | null)[]>().notNull(),
   removed: jsonb().$type<string[]>().notNull().default([]),
 });
+
+// One match of a ruleset. Seats holds a user id per seat 0-3. The seed must
+// not reach clients before the match is over.
+export const matches = pgTable('matches', {
+  id: uuid().primaryKey().defaultRandom(),
+  createdAt: timestamp().notNull().defaultNow(),
+  roomId: uuid().references(() => rooms.id, { onDelete: 'set null' }),
+  ruleset: text().notNull(),
+  variant: jsonb().notNull(),
+  seats: jsonb().$type<string[]>().notNull(),
+  seed: bigint({ mode: 'number' }).notNull(),
+  // running, finished (a team won), or ended (players ended it while paused).
+  status: text().notNull().default('running'),
+  result: jsonb(),
+});
+
+// The accepted moves of a match; replaying them in order rebuilds it.
+export const moves = pgTable(
+  'moves',
+  {
+    matchId: uuid()
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    index: integer().notNull(),
+    seat: integer().notNull(),
+    move: jsonb().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.index] })],
+);
 
 // Better Auth tables: user, session, account, verification.
 export const user = pgTable(

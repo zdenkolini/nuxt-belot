@@ -1,45 +1,8 @@
 import { expect, test } from 'bun:test';
 import type { BelotMove } from '@belot/engine';
-import type { RoomMessage } from './app';
-import { setup } from './test-setup';
-
-type Socket = Awaited<ReturnType<Awaited<ReturnType<typeof setup>>['connect']>>;
+import { nextOf, send, table } from './test-setup';
 
 type PlayMove = Extract<BelotMove, { type: 'play' }>;
-
-// The next message of one type, skipping the others.
-const nextOf = async <Type extends RoomMessage['type']>(
-  socket: Socket,
-  type: Type,
-) => {
-  for (;;) {
-    const message = await socket.next();
-    if (!message) throw new Error(`socket closed before a ${type} message`);
-    if (message.type === type)
-      return message as Extract<RoomMessage, { type: Type }>;
-  }
-};
-
-// Four players seated in seat order, each with an open room socket.
-const table = async () => {
-  const ctx = await setup();
-  const names = ['ana', 'bob', 'cid', 'dan'];
-  const players = [];
-  for (const name of names) players.push(await ctx.player(name));
-  const { data } = await ctx.api.rooms.post({}, players[0]!);
-  const room = ctx.api.rooms({ id: data!.id });
-  for (const [seat, p] of players.entries()) {
-    await room.join.post({}, p);
-    await room.seat.put({ seat }, p);
-  }
-  const sockets = [];
-  for (const p of players) {
-    const socket = await ctx.connect(data!.id, p);
-    await nextOf(socket, 'room');
-    sockets.push(socket);
-  }
-  return { ...ctx, room, roomId: data!.id, players, sockets };
-};
 
 test('starting a match sends each seat its own view and nothing of the seed', async () => {
   const { room, players, sockets } = await table();
@@ -56,9 +19,6 @@ test('starting a match sends each seat its own view and nothing of the seed', as
     expect(JSON.stringify(message)).not.toContain('seed');
   }
 });
-
-const send = (socket: Socket, move: unknown) =>
-  socket.ws.send(JSON.stringify({ type: 'match.move', move }));
 
 test('the server rejects moves out of turn and illegal moves, and applies legal ones', async () => {
   const { room, players, sockets } = await table();

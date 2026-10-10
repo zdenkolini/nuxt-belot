@@ -1,6 +1,6 @@
 import { afterEach } from 'bun:test';
 import { treaty } from '@elysiajs/eden';
-import { createDb } from '@belot/db';
+import { createDb, type Db } from '@belot/db';
 import { createApp, type Email, type RoomMessage } from './app';
 
 export const baseURL = 'http://localhost:3000';
@@ -9,15 +9,17 @@ export const linkIn = (email: Email) => email.text.match(/https?:\/\/\S+/)![0];
 
 export type Session = { headers: { cookie: string } };
 
-const servers: { stop: () => unknown }[] = [];
+const servers: { server: unknown; stop: () => unknown }[] = [];
 afterEach(() => {
-  for (const server of servers.splice(0)) server.stop();
+  for (const app of servers.splice(0)) if (app.server) app.stop();
 });
 
-export const setup = async () => {
+// Pass the db of an earlier setup to start a new server over the same data.
+export const setup = async (db?: Db) => {
   const sent: Email[] = [];
-  const app = createApp({
-    db: await createDb(),
+  db ??= await createDb();
+  const app = await createApp({
+    db,
     sendEmail: async (email) => {
       sent.push(email);
     },
@@ -87,5 +89,46 @@ export const setup = async () => {
     return { ws, next, isClosed: () => closed };
   };
 
-  return { app, api, sent, signIn, player, connect };
+  return { app, db, api, sent, signIn, player, connect };
+};
+
+export type Socket = Awaited<
+  ReturnType<Awaited<ReturnType<typeof setup>>['connect']>
+>;
+
+// The next message of one type, skipping the others.
+export const nextOf = async <Type extends RoomMessage['type']>(
+  socket: Socket,
+  type: Type,
+) => {
+  for (;;) {
+    const message = await socket.next();
+    if (!message) throw new Error(`socket closed before a ${type} message`);
+    if (message.type === type)
+      return message as Extract<RoomMessage, { type: Type }>;
+  }
+};
+
+export const send = (socket: Socket, move: unknown) =>
+  socket.ws.send(JSON.stringify({ type: 'match.move', move }));
+
+// Four players seated in seat order, each with an open room socket.
+export const table = async () => {
+  const ctx = await setup();
+  const names = ['ana', 'bob', 'cid', 'dan'];
+  const players = [];
+  for (const name of names) players.push(await ctx.player(name));
+  const { data } = await ctx.api.rooms.post({}, players[0]!);
+  const room = ctx.api.rooms({ id: data!.id });
+  for (const [seat, p] of players.entries()) {
+    await room.join.post({}, p);
+    await room.seat.put({ seat }, p);
+  }
+  const sockets = [];
+  for (const p of players) {
+    const socket = await ctx.connect(data!.id, p);
+    await nextOf(socket, 'room');
+    sockets.push(socket);
+  }
+  return { ...ctx, room, roomId: data!.id, players, sockets };
 };

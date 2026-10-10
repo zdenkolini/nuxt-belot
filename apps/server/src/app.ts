@@ -18,7 +18,8 @@ const isUniqueViolation = (e: unknown) =>
   e instanceof Error &&
   (e.cause as { code?: string } | undefined)?.code === '23505';
 
-export const createApp = (options: AuthOptions) => {
+// Async because live matches are rebuilt from the database first.
+export const createApp = async (options: AuthOptions) => {
   const { db } = options;
   const auth = createAuth(options);
   const session = createSession(auth);
@@ -27,7 +28,7 @@ export const createApp = (options: AuthOptions) => {
     .use(cors({ origin: options.webURL, credentials: true }))
     .mount(auth.handler)
     .use(session)
-    .use(roomRoutes(db, session))
+    .use(await roomRoutes(db, session))
     .get('/health', () => ({ status: 'ok' as const }))
     .get(
       '/me',
@@ -88,4 +89,4 @@ export const createApp = (options: AuthOptions) => {
     );
 };
 
-export type App = ReturnType<typeof createApp>;
+export type App = Awaited<ReturnType<typeof createApp>>;

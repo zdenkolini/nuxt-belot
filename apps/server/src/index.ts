@@ -1,7 +1,7 @@
 import { createDb } from '@belot/db';
 import { createApp } from './app';
 
-const app = createApp({
+const app = await createApp({
   db: await createDb(process.env.DATA_DIR ?? '.data'),
   // Resend replaces this in production.
   sendEmail: async ({ to, subject, text }) => {

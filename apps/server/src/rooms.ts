@@ -55,11 +55,15 @@ const nextOwner = (room: Room) => {
   return room.members.find((id) => id !== room.ownerId);
 };
 
-export const roomRoutes = (db: Db, session: Session) => {
+export const roomRoutes = async (db: Db, session: Session) => {
   // Open room sockets by room id, then by connection id.
   const sockets = new Map<string, Map<string, Socket>>();
   const chat = createChat();
-  const play = createPlay();
+  const play = await createPlay(
+    db,
+    (roomId) =>
+      new Set([...(sockets.get(roomId)?.values() ?? [])].map((s) => s.userId)),
+  );
 
   // Sends each user their own message, if they have one.
   const sendEach = (roomId: string, messages: Map<string, RoomMessage>) => {
@@ -302,7 +306,7 @@ export const roomRoutes = (db: Db, session: Session) => {
         const seated = result!.seats as string[];
         sendEach(
           id,
-          play.start(id, seated, { targetScore: result!.targetScore }),
+          await play.start(id, seated, { targetScore: result!.targetScore }),
         );
         return { started: true };
       },
@@ -327,24 +331,32 @@ export const roomRoutes = (db: Db, session: Session) => {
         const roomSockets = sockets.get(params.id) ?? new Map();
         sockets.set(params.id, roomSockets.set(ws.id, socket));
         socket.send({ type: 'room', room: await view(room) });
-        const match = play.viewFor(params.id, userId);
-        if (match) socket.send(match);
+        // A seated player coming back may end the pause for everyone.
+        if (play.isSeated(params.id, userId)) {
+          sendEach(params.id, play.viewsOf(params.id));
+        } else {
+          const match = play.viewFor(params.id, userId);
+          if (match) socket.send(match);
+        }
       },
-      message(ws, body) {
+      async message(ws, body) {
         const intent = (
           typeof body === 'string' ? JSON.parse(body) : body
         ) as Partial<ChatIntent | MatchIntent> | null;
         const roomSockets = sockets.get(ws.data.params.id);
         const socket = roomSockets?.get(ws.id);
         if (!roomSockets || !socket) return;
-        if (intent?.type === 'match.move') {
-          const moved = play.move(
-            ws.data.params.id,
-            socket.userId,
-            intent.move ?? {},
-          );
-          if (moved.ok) sendEach(ws.data.params.id, moved.views);
-          else socket.send({ type: 'match.rejected', reason: moved.reason });
+        if (intent?.type === 'match.move' || intent?.type === 'match.end') {
+          const done =
+            intent.type === 'match.move'
+              ? await play.move(
+                  ws.data.params.id,
+                  socket.userId,
+                  intent.move ?? {},
+                )
+              : await play.end(ws.data.params.id, socket.userId);
+          if (done.ok) sendEach(ws.data.params.id, done.views);
+          else socket.send({ type: 'match.rejected', reason: done.reason });
         } else if (intent?.type?.startsWith('chat.')) {
           chat.handle(ws.data.params.id, socket, intent as ChatIntent, [
             ...roomSockets.values(),
@@ -352,7 +364,12 @@ export const roomRoutes = (db: Db, session: Session) => {
         }
       },
       close(ws) {
-        sockets.get(ws.data.params.id)?.delete(ws.id);
+        const { userId, params } = ws.data;
+        sockets.get(params.id)?.delete(ws.id);
+        // A seated player gone pauses the match for everyone.
+        if (play.isSeated(params.id, userId)) {
+          sendEach(params.id, play.viewsOf(params.id));
+        }
       },
     });
 };
