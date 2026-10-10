@@ -1,6 +1,7 @@
 import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
+import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
 import type { Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
@@ -26,7 +27,7 @@ export type PublicRoom = {
 
 // Everything the server sends over the room socket.
 export type RoomMessage =
-  { type: 'room'; room: RoomView } | { type: 'removed' };
+  { type: 'room'; room: RoomView } | { type: 'removed' } | ChatServerMessage;
 
 type Socket = {
   userId: string;
@@ -53,6 +54,7 @@ const nextOwner = (room: Room) => {
 export const roomRoutes = (db: Db, session: Session) => {
   // Open room sockets by room id, then by connection id.
   const sockets = new Map<string, Map<string, Socket>>();
+  const chat = createChat();
 
   const view = async (room: Room): Promise<RoomView> => {
     const names = await db
@@ -115,7 +117,10 @@ export const roomRoutes = (db: Db, session: Session) => {
       await tx.update(rooms).set(room).where(eq(rooms.id, id));
       return { room };
     });
-    if (!result) return null;
+    if (!result) {
+      chat.forget(id);
+      return null;
+    }
     if ('failure' in result) return result.failure;
     const roomView = await view(result.room);
     broadcast(roomView);
@@ -301,6 +306,19 @@ export const roomRoutes = (db: Db, session: Session) => {
         const roomSockets = sockets.get(params.id) ?? new Map();
         sockets.set(params.id, roomSockets.set(ws.id, socket));
         socket.send({ type: 'room', room: await view(room) });
+      },
+      message(ws, body) {
+        const intent = (
+          typeof body === 'string' ? JSON.parse(body) : body
+        ) as ChatIntent;
+        const roomSockets = sockets.get(ws.data.params.id);
+        const socket = roomSockets?.get(ws.id);
+        if (!roomSockets || !socket) return;
+        if (intent.type.startsWith('chat.')) {
+          chat.handle(ws.data.params.id, socket, intent, [
+            ...roomSockets.values(),
+          ]);
+        }
       },
       close(ws) {
         sockets.get(ws.data.params.id)?.delete(ws.id);
