@@ -23,7 +23,8 @@ export type BelotEvent =
   | { type: 'trickWon'; seat: Seat }
   | { type: 'declared'; declarations: Declaration[] }
   | { type: 'belote'; seat: Seat }
-  | { type: 'dealScored'; score: DealScore };
+  | { type: 'dealScored'; score: DealScore }
+  | { type: 'matchEnded'; result: BelotResult };
 
 // Seats 0 and 2 are team 0, seats 1 and 3 are team 1.
 export type Team = 0 | 1;
@@ -48,6 +49,8 @@ export type Declaration = {
   points: number;
 };
 
+export type BelotResult = { winner: Team; scores: TeamPoints };
+
 export type Play = { seat: Seat; card: Card };
 export type Trick = { plays: Play[]; winner: Seat };
 
@@ -69,6 +72,8 @@ export type BelotState = {
   variant: BelotVariant;
   seed: number;
   deals: number;
+  scores: TeamPoints;
+  result: BelotResult | null;
   deal: Deal;
 };
 
@@ -81,6 +86,7 @@ export type BelotView = {
   trick: Play[];
   declarations: Declaration[];
   belote: Seat | null;
+  scores: TeamPoints;
 };
 
 const rightOf = (seat: Seat) => ((seat + 1) % 4) as Seat;
@@ -295,7 +301,7 @@ const legalCards = (hand: Card[], trick: Play[], trump: Suit): Card[] => {
 
 const legalMoves = (state: BelotState, seat: Seat): BelotMove[] => {
   const { phase, turn, dealer, hands, trick } = state.deal;
-  if (seat !== turn) return [];
+  if (state.result || seat !== turn) return [];
   if (phase === 'playing') {
     return legalCards(hands[seat]!, trick, state.deal.trump!).map((card) => ({
       type: 'play' as const,
@@ -368,16 +374,40 @@ const playCard = (
     events.push({ type: 'declared', declarations: deal.declarations });
   }
   if (tricks.length === 8) {
-    events.push({
-      type: 'dealScored',
-      score: scoreDeal({ ...deal, tricks, belote }),
-    });
+    const score = scoreDeal({ ...deal, tricks, belote });
+    events.push({ type: 'dealScored', score });
+    const scores: TeamPoints = [
+      state.scores[0] + score.points[0],
+      state.scores[1] + score.points[1],
+    ];
+    const { targetScore } = state.variant;
+    if (scores[0] >= targetScore || scores[1] >= targetScore) {
+      const winner: Team =
+        scores[0] === scores[1]
+          ? teamOf(deal.caller!)
+          : scores[0] > scores[1]
+            ? 0
+            : 1;
+      const result = { winner, scores };
+      events.push({ type: 'matchEnded', result });
+      return {
+        ok: true,
+        state: {
+          ...state,
+          scores,
+          result,
+          deal: { ...deal, hands, trick: [], tricks, belote },
+        },
+        events,
+      };
+    }
     const deals = state.deals + 1;
     return {
       ok: true,
       state: {
         ...state,
         deals,
+        scores,
         deal: startDeal(rightOf(deal.dealer), state.seed + deals + 1),
       },
       events,
@@ -396,7 +426,14 @@ const playCard = (
 export const belot = {
   setup: (variant: BelotVariant, _seats: number, seed: number): BelotState => {
     const dealer = shuffle([0, 1, 2, 3] as const, seed)[0]!;
-    return { variant, seed, deals: 0, deal: startDeal(dealer, seed + 1) };
+    return {
+      variant,
+      seed,
+      deals: 0,
+      scores: [0, 0],
+      result: null,
+      deal: startDeal(dealer, seed + 1),
+    };
   },
   legalMoves,
   apply: (
@@ -430,13 +467,14 @@ export const belot = {
     trick: state.deal.trick,
     declarations: state.deal.tricks.length > 0 ? state.deal.declarations : [],
     belote: state.deal.belote,
+    scores: state.scores,
   }),
-  result: () => null,
+  result: (state: BelotState) => state.result,
 } satisfies Ruleset<
   BelotVariant,
   BelotState,
   BelotMove,
   BelotEvent,
   BelotView,
-  never
+  BelotResult
 >;
