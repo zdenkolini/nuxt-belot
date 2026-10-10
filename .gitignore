@@ -91,3 +91,5 @@ sw.*
 
 #custom
 .yarn/
+.svelte-kit/
+apps/web/build/
