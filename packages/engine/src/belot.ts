@@ -361,11 +361,13 @@ const playCard = (
   );
   const trick = [...deal.trick, { seat, card }];
   const events: BelotEvent[] = [{ type: 'played', seat, card }];
-  const pair =
+  const partnerRank =
     card.rank === 'king' ? 'queen' : card.rank === 'queen' ? 'king' : null;
   const belote =
     card.suit === deal.trump &&
-    hands[seat]!.some((held) => held.suit === card.suit && held.rank === pair)
+    hands[seat]!.some(
+      (held) => held.suit === card.suit && held.rank === partnerRank,
+    )
       ? seat
       : deal.belote;
   if (belote !== deal.belote) events.push({ type: 'belote', seat });

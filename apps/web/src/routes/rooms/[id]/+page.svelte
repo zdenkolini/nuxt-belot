@@ -108,14 +108,14 @@
 					: m.room_action_failed();
 	};
 
-	const room$ = $derived(api.rooms({ id }));
+	const roomApi = $derived(api.rooms({ id }));
 
 	const copyInvite = async () => {
 		await navigator.clipboard.writeText(`${location.origin}/rooms/${id}`);
 		notice = m.invite_link_copied();
 	};
 
-	const start = () => act(room$.start.post({}));
+	const start = () => act(roomApi.start.post({}));
 
 	const move = (next: BelotMove) => {
 		notice = null;
@@ -129,7 +129,7 @@
 	};
 
 	const leaveRoom = async () => {
-		await room$.leave.post({});
+		await roomApi.leave.post({});
 		goto(resolve('/'));
 	};
 </script>
@@ -186,7 +186,7 @@
 					{#if isOwner}
 						<Button
 							variant="outline"
-							onclick={() => act(room$.patch({ isPublic: !room!.isPublic }))}
+							onclick={() => act(roomApi.patch({ isPublic: !room!.isPublic }))}
 						>
 							{room.isPublic ? m.make_private() : m.make_public()}
 						</Button>
@@ -202,7 +202,7 @@
 								size="sm"
 								disabled={!isOwner}
 								aria-pressed={room.targetScore === score}
-								onclick={() => act(room$.patch({ targetScore: score }))}>{score}</Button
+								onclick={() => act(roomApi.patch({ targetScore: score }))}>{score}</Button
 							>
 						{/each}
 					</div>
@@ -216,11 +216,11 @@
 							</span>
 							<span class="font-medium">{userId ? usernameOf(userId) : m.free_seat()}</span>
 							{#if userId === null}
-								<Button size="sm" onclick={() => act(room$.seat.put({ seat }))}>
+								<Button size="sm" onclick={() => act(roomApi.seat.put({ seat }))}>
 									{m.take_seat()}
 								</Button>
 							{:else if seat === mySeat}
-								<Button size="sm" variant="outline" onclick={() => act(room$.seat.delete({}))}>
+								<Button size="sm" variant="outline" onclick={() => act(roomApi.seat.delete({}))}>
 									{m.leave_seat()}
 								</Button>
 							{/if}
@@ -238,7 +238,7 @@
 									<Button
 										size="xs"
 										variant="destructive"
-										onclick={() => act(room$.members({ userId: member.id }).delete({}))}
+										onclick={() => act(roomApi.members({ userId: member.id }).delete({}))}
 									>
 										{m.remove_player()}
 									</Button>
