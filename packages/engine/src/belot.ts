@@ -164,11 +164,14 @@ const cardPoints: Record<Card['rank'], [plain: number, trump: number]> = {
 const teamOf = (seat: Seat) => (seat % 2) as Team;
 
 // Ties break by value, then length, then top card, then the seat closest
-// to the dealer's right.
+// to the dealer's right. A sequence's top card is in natural order; a four
+// of a kind goes by card strength.
 const declarationKey = (declaration: Declaration, dealer: Seat) => [
   declaration.points,
   declaration.cards.length,
-  ranks.indexOf(declaration.cards.at(-1)!.rank),
+  (declaration.kind === 'fourOfAKind' ? plainOrder : ranks).indexOf(
+    declaration.cards.at(-1)!.rank,
+  ),
   -((declaration.seat - dealer + 3) % 4),
 ];
 

@@ -614,6 +614,9 @@ const fourOfAKind: Record<string, number> = {
   queen: 100,
 };
 
+// Four of a kind compares by card strength, from lowest to highest.
+const strongerFours = ['queen', 'king', 'ten', 'ace'];
+
 type Found = { points: number; length: number; top: number };
 
 // Test-side reading of the declaration rules, used only to pick deals.
@@ -635,7 +638,7 @@ const declarationsIn = (hand: Card[]): Found[] => {
   }
   for (const [rank, points] of Object.entries(fourOfAKind)) {
     if (hand.filter((card) => card.rank === rank).length === 4) {
-      found.push({ points, length: 4, top: natural.indexOf(rank) });
+      found.push({ points, length: 4, top: strongerFours.indexOf(rank) });
     }
   }
   return found;
@@ -807,6 +810,27 @@ describe('declaration comparison', () => {
     expect(score.declarations[winner]).toBe(sumOf(winner));
     expect(score.declarations[1 - winner]).toBe(0);
     expect(sumOf(1 - winner)).toBeGreaterThan(0);
+  });
+
+  test('of two fours with equal value, the stronger card wins: ace, ten, king, queen', () => {
+    const holder = (hands: Card[][], rank: string) =>
+      seats.find((seat) => holdsFour(hands[seat]!, [rank]));
+    const deal = findHands(({ hands }) => {
+      const tens = holder(hands, 'ten');
+      const other = holder(hands, 'king') ?? holder(hands, 'queen');
+      const found = hands.flatMap(declarationsIn);
+      return (
+        tens !== undefined &&
+        other !== undefined &&
+        tens % 2 !== other % 2 &&
+        holder(hands, 'ace') === undefined &&
+        found.every((d) => d.points <= 100 && d.length <= 4)
+      );
+    });
+    const team = holder(deal.hands, 'ten')! % 2;
+    const { score } = playDeal(deal.seed, varied(deal.seed));
+    expect(score.declarations[team]).toBeGreaterThanOrEqual(100);
+    expect(score.declarations[1 - team]).toBe(0);
   });
 
   test('every seat sees which team scores its declarations once they are announced', () => {
