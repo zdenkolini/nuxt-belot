@@ -60,6 +60,18 @@ test('opening the invite link puts a player in the room, live for everyone', asy
   });
 });
 
+test('a player without a username cannot create or join a room', async () => {
+  const { api, roomId, signIn } = await roomWith();
+  const newcomer = await signIn('new@example.com');
+
+  const created = await api.rooms.post({}, newcomer);
+  expect(created.status).toBe(403);
+  expect(created.error?.value).toEqual({ error: 'username_required' });
+  const joined = await api.rooms({ id: roomId }).join.post({}, newcomer);
+  expect(joined.status).toBe(403);
+  expect(joined.error?.value).toEqual({ error: 'username_required' });
+});
+
 test('only members can open the room socket', async () => {
   const { roomId, player, connect } = await roomWith();
   const eve = await player('eve');

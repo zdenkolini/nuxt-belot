@@ -184,7 +184,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           freeSeats: room.seats.filter((id) => id === null).length,
         }));
       },
-      { auth: true },
+      { player: true },
     )
     .post(
       '/',
@@ -199,7 +199,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           .returning();
         return view(room!);
       },
-      { auth: true },
+      { player: true },
     )
     .post(
       '/:id/join',
@@ -209,7 +209,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
             return fail(403, 'removed_from_room');
           if (!room.members.includes(userId)) room.members.push(userId);
         }))!,
-      { auth: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
+      { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .post(
       '/:id/leave',
@@ -223,7 +223,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         disconnect(id, userId);
         return { left: true };
       },
-      { auth: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
+      { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .put(
       '/:id/seat',
@@ -238,7 +238,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           );
         }))!,
       {
-        auth: true,
+        player: true,
         params: t.Object({ id: t.String({ format: 'uuid' }) }),
         body: t.Object({ seat: t.Integer({ minimum: 0, maximum: 3 }) }),
       },
@@ -251,7 +251,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           if (failure) return failure;
           room.seats = room.seats.map((s) => (s === userId ? null : s));
         }))!,
-      { auth: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
+      { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .patch(
       '/:id',
@@ -264,7 +264,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
             room.targetScore = body.targetScore;
         }))!,
       {
-        auth: true,
+        player: true,
         params: t.Object({ id: t.String({ format: 'uuid' }) }),
         body: t.Object({
           isPublic: t.Optional(t.Boolean()),
@@ -290,7 +290,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         return result!;
       },
       {
-        auth: true,
+        player: true,
         params: t.Object({
           id: t.String({ format: 'uuid' }),
           memberId: t.String(),
@@ -314,10 +314,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
         );
         return { started: true };
       },
-      { auth: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
+      { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .ws('/:id/ws', {
-      auth: true,
+      player: true,
       params: t.Object({ id: t.String({ format: 'uuid' }) }),
       open(ws) {
         const { userId, params } = ws.data;

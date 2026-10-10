@@ -28,6 +28,12 @@ export const createAuth = ({
     trustedOrigins: [webURL],
     telemetry: { enabled: false },
     session: { expiresIn: 60 * 60 * 24 * 365 },
+    // Set through PUT /me/username only.
+    user: {
+      additionalFields: {
+        username: { type: 'string', required: false, input: false },
+      },
+    },
     plugins: [
       magicLink({
         sendMagicLink: ({ email, url }) =>
