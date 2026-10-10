@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import type { BelotMove } from '@belot/engine';
+import type { BelotMove, Declaration } from '@belot/engine';
 import { nextOf, send, table } from './test-setup';
 
 type PlayMove = Extract<BelotMove, { type: 'play' }>;
@@ -140,5 +140,46 @@ test('four players play a full match to the target score, each seeing only their
     expect(match.result).toBeNull();
     expect(match.view.scores).toEqual([0, 0]);
     expect(match.view.hand).toHaveLength(6);
+  }
+});
+
+test('declarations and the belote appear in every view only once announced', async () => {
+  const { room, players, sockets } = await table();
+  const [ana] = players;
+  await room.patch({ targetScore: 501 }, ana!);
+  await room.start.post({}, ana!);
+  let views = await Promise.all(sockets.map((s) => nextOf(s, 'match')));
+
+  let declared: Declaration[] = [];
+  let belote: number | null = null;
+  let announced = 0;
+  while (announced === 0 || !views[0]!.match.result) {
+    if (views[0]!.match.result) {
+      await room.start.post({}, ana!);
+    } else {
+      const turn = views[0]!.match.turn!;
+      send(sockets[turn]!, views[turn]!.match.legalMoves.at(-1));
+    }
+    views = await Promise.all(sockets.map((s) => nextOf(s, 'match')));
+
+    // A new deal starts after each deal score, except the last of the match.
+    const { events, result } = views[0]!.match;
+    if (events.length === 0) [declared, belote] = [[], null];
+    for (const event of events) {
+      if (event.type === 'declared') {
+        declared = event.declarations;
+        announced++;
+      }
+      if (event.type === 'belote') belote = event.seat;
+      if (event.type === 'dealScored' && !result)
+        [declared, belote] = [[], null];
+    }
+
+    for (const { match } of views) {
+      expect(match.view.declarations).toEqual(declared);
+      expect<number | null>(match.view.belote).toBe(belote);
+      const scoring = match.view.declarationPoints.filter((p) => p > 0);
+      expect(scoring).toHaveLength(declared.length > 0 ? 1 : 0);
+    }
   }
 });

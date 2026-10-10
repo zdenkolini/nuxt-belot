@@ -85,6 +85,8 @@ export type BelotView = {
   caller: Seat | null;
   trick: Play[];
   declarations: Declaration[];
+  // What the announced declarations score for each team; only one team scores.
+  declarationPoints: TeamPoints;
   belote: Seat | null;
   scores: TeamPoints;
 };
@@ -463,17 +465,21 @@ export const belot = {
       events: [{ type: 'passed', seat }],
     };
   },
-  view: (state: BelotState, seat: Seat): BelotView => ({
-    dealer: state.deal.dealer,
-    hand: state.deal.hands[seat]!,
-    cardCounts: state.deal.hands.map((hand) => hand.length),
-    trump: state.deal.trump,
-    caller: state.deal.caller,
-    trick: state.deal.trick,
-    declarations: state.deal.tricks.length > 0 ? state.deal.declarations : [],
-    belote: state.deal.belote,
-    scores: state.scores,
-  }),
+  view: (state: BelotState, seat: Seat): BelotView => {
+    const announced = state.deal.tricks.length > 0;
+    return {
+      dealer: state.deal.dealer,
+      hand: state.deal.hands[seat]!,
+      cardCounts: state.deal.hands.map((hand) => hand.length),
+      trump: state.deal.trump,
+      caller: state.deal.caller,
+      trick: state.deal.trick,
+      declarations: announced ? state.deal.declarations : [],
+      declarationPoints: announced ? scoreDeclarations(state.deal) : [0, 0],
+      belote: state.deal.belote,
+      scores: state.scores,
+    };
+  },
   result: (state: BelotState) => state.result,
 } satisfies Ruleset<
   BelotVariant,

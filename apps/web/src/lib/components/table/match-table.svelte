@@ -8,6 +8,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { receive, send, sortHand, suitNames, suitSymbols } from './cards.js';
 	import DealScoreTable from './deal-score.svelte';
+	import Declarations from './declarations.svelte';
 	import PlayingCard from './playing-card.svelte';
 
 	let {
@@ -101,6 +102,7 @@
 				{m.calling_trump()}
 			{/if}
 		</p>
+		<Declarations {view} {usernameOf} {teamName} />
 		{#if dealScore}
 			<section class="hidden flex-col gap-2 md:flex">
 				<h2 class="font-medium">{m.deal_score()}</h2>
