@@ -119,7 +119,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
 
   // Changes one room in a transaction, then sends the new room to everyone in it.
   // `change` mutates the room, or returns a failure to reject the request.
-  // Gives null when the last member left and the room is gone.
+  // The room is null when the last member left and the room is gone.
   const update = async <Failure>(
     id: string,
     change: (room: Room) => Failure | void,
@@ -130,24 +130,26 @@ export const roomRoutes = async (db: Db, session: Session) => {
         .from(rooms)
         .where(eq(rooms.id, id))
         .for('update');
-      if (!room) return { failure: fail(404, 'room_not_found') };
+      if (!room) {
+        return { ok: false, failure: fail(404, 'room_not_found') } as const;
+      }
       const failure = change(room);
-      if (failure) return { failure };
+      if (failure) return { ok: false, failure } as const;
       if (room.members.length === 0) {
         await tx.delete(rooms).where(eq(rooms.id, id));
-        return null;
+        return { ok: true, room: null } as const;
       }
       await tx.update(rooms).set(room).where(eq(rooms.id, id));
-      return { room };
+      return { ok: true, room } as const;
     });
-    if (!result) {
+    if (!result.ok) return result;
+    if (!result.room) {
       chat.forget(id);
-      return null;
+      return { ok: true, room: null } as const;
     }
-    if ('failure' in result) return result.failure;
     const roomView = await view(result.room);
     broadcast(roomView);
-    return roomView;
+    return { ok: true, room: roomView } as const;
   };
 
   const notMember = (room: Room, userId: string) =>
@@ -209,15 +211,17 @@ export const roomRoutes = async (db: Db, session: Session) => {
     )
     .post(
       '/:id/join',
-      async ({ userId, params: { id } }) =>
-        (await update(id, (room) => {
+      async ({ userId, params: { id } }) => {
+        const result = await update(id, (room) => {
           if (room.removed.includes(userId))
             return fail(403, 'removed_from_room');
           if (!room.members.includes(userId)) room.members.push(userId);
           // A player who left mid-match takes their seat back.
           const seat = play.seatOf(room.id, userId);
           if (seat !== undefined) room.seats[seat] = userId;
-        }))!,
+        });
+        return result.ok ? result.room : result.failure;
+      },
       { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .post(
@@ -228,7 +232,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           if (failure) return failure;
           leave(room, userId);
         });
-        if (result && 'code' in result) return result;
+        if (!result.ok) return result.failure;
         disconnect(id, userId);
         return { left: true };
       },
@@ -236,8 +240,8 @@ export const roomRoutes = async (db: Db, session: Session) => {
     )
     .put(
       '/:id/seat',
-      async ({ userId, params: { id }, body: { seat } }) =>
-        (await update(id, (room) => {
+      async ({ userId, params: { id }, body: { seat } }) => {
+        const result = await update(id, (room) => {
           const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;
           const taken = room.seats[seat];
@@ -245,7 +249,9 @@ export const roomRoutes = async (db: Db, session: Session) => {
           room.seats = room.seats.map((s, i) =>
             i === seat ? userId : s === userId ? null : s,
           );
-        }))!,
+        });
+        return result.ok ? result.room : result.failure;
+      },
       {
         player: true,
         params: t.Object({ id: t.String({ format: 'uuid' }) }),
@@ -254,24 +260,28 @@ export const roomRoutes = async (db: Db, session: Session) => {
     )
     .delete(
       '/:id/seat',
-      async ({ userId, params: { id } }) =>
-        (await update(id, (room) => {
+      async ({ userId, params: { id } }) => {
+        const result = await update(id, (room) => {
           const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;
           room.seats = room.seats.map((s) => (s === userId ? null : s));
-        }))!,
+        });
+        return result.ok ? result.room : result.failure;
+      },
       { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
     .patch(
       '/:id',
-      async ({ userId, params: { id }, body }) =>
-        (await update(id, (room) => {
+      async ({ userId, params: { id }, body }) => {
+        const result = await update(id, (room) => {
           const failure = notOwner(room, userId);
           if (failure) return failure;
           if (body.isPublic !== undefined) room.isPublic = body.isPublic;
           if (body.targetScore !== undefined)
             room.targetScore = body.targetScore;
-        }))!,
+        });
+        return result.ok ? result.room : result.failure;
+      },
       {
         player: true,
         params: t.Object({ id: t.String({ format: 'uuid' }) }),
@@ -293,8 +303,9 @@ export const roomRoutes = async (db: Db, session: Session) => {
           leave(room, memberId);
           room.removed.push(memberId);
         });
-        if (!('code' in result!)) disconnect(id, memberId, { type: 'removed' });
-        return result!;
+        if (!result.ok) return result.failure;
+        disconnect(id, memberId, { type: 'removed' });
+        return result.room;
       },
       {
         player: true,
@@ -313,12 +324,9 @@ export const roomRoutes = async (db: Db, session: Session) => {
           if (room.seats.includes(null)) return fail(409, 'seats_not_full');
           return matchRunning(room);
         });
-        if ('code' in result!) return result;
-        const seated = result!.seats as string[];
-        sendEach(
-          id,
-          await play.start(id, seated, { targetScore: result!.targetScore }),
-        );
+        if (!result.ok) return result.failure;
+        const { seats, targetScore } = result.room!;
+        sendEach(id, await play.start(id, seats as string[], { targetScore }));
         return { started: true };
       },
       { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
