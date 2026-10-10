@@ -37,11 +37,6 @@ type Socket = Member & {
   close: () => void;
 };
 
-const fail = <Code extends 403 | 404 | 409, Error extends string>(
-  code: Code,
-  error: Error,
-) => status(code, { error });
-
 // t.UnionEnum would default a missing target score to 501.
 const targetScore = t.Union(
   targetScores.map((score) => t.Literal(score)) as [
@@ -130,7 +125,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
         .where(eq(rooms.id, id))
         .for('update');
       if (!room) {
-        return { ok: false, failure: fail(404, 'room_not_found') } as const;
+        return {
+          ok: false,
+          failure: status(404, { error: 'room_not_found' as const }),
+        } as const;
       }
       const failure = change(room);
       if (failure) return { ok: false, failure } as const;
@@ -152,13 +150,19 @@ export const roomRoutes = async (db: Db, session: Session) => {
   };
 
   const notMember = (room: Room, userId: string) =>
-    room.members.includes(userId) ? undefined : fail(403, 'not_a_member');
+    room.members.includes(userId)
+      ? undefined
+      : status(403, { error: 'not_a_member' as const });
 
   const notOwner = (room: Room, userId: string) =>
-    room.ownerId === userId ? undefined : fail(403, 'not_the_owner');
+    room.ownerId === userId
+      ? undefined
+      : status(403, { error: 'not_the_owner' as const });
 
   const matchRunning = (room: Room) =>
-    play.isRunning(room.id) ? fail(409, 'match_running') : undefined;
+    play.isRunning(room.id)
+      ? status(409, { error: 'match_running' as const })
+      : undefined;
 
   const leave = (room: Room, userId: string) => {
     if (room.ownerId === userId) {
@@ -213,7 +217,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
       async ({ userId, params: { id } }) => {
         const result = await update(id, (room) => {
           if (room.removed.includes(userId))
-            return fail(403, 'removed_from_room');
+            return status(403, { error: 'removed_from_room' as const });
           if (!room.members.includes(userId)) room.members.push(userId);
           // A player who left mid-match takes their seat back.
           const seat = play.seatOf({ roomId: room.id, userId });
@@ -244,7 +248,8 @@ export const roomRoutes = async (db: Db, session: Session) => {
           const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;
           const taken = room.seats[seat];
-          if (taken && taken !== userId) return fail(409, 'seat_taken');
+          if (taken && taken !== userId)
+            return status(409, { error: 'seat_taken' as const });
           room.seats = room.seats.map((s, i) =>
             i === seat ? userId : s === userId ? null : s,
           );
@@ -297,7 +302,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           const failure = notOwner(room, userId);
           if (failure) return failure;
           if (member === userId || !room.members.includes(member)) {
-            return fail(404, 'member_not_found');
+            return status(404, { error: 'member_not_found' as const });
           }
           leave(room, member);
           room.removed.push(member);
@@ -320,7 +325,8 @@ export const roomRoutes = async (db: Db, session: Session) => {
         const result = await update(id, (room) => {
           const failure = notOwner(room, userId);
           if (failure) return failure;
-          if (room.seats.includes(null)) return fail(409, 'seats_not_full');
+          if (room.seats.includes(null))
+            return status(409, { error: 'seats_not_full' as const });
           return matchRunning(room);
         });
         if (!result.ok) return result.failure;
