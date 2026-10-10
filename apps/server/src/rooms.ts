@@ -1,6 +1,7 @@
 import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
+import { createPlay, type MatchIntent, type MatchMessage } from './play';
 import type { Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
@@ -26,7 +27,7 @@ export type PublicRoom = {
 
 // Everything the server sends over the room socket.
 export type RoomMessage =
-  { type: 'room'; room: RoomView } | { type: 'removed' };
+  { type: 'room'; room: RoomView } | { type: 'removed' } | MatchMessage;
 
 type Socket = {
   userId: string;
@@ -53,6 +54,15 @@ const nextOwner = (room: Room) => {
 export const roomRoutes = (db: Db, session: Session) => {
   // Open room sockets by room id, then by connection id.
   const sockets = new Map<string, Map<string, Socket>>();
+  const play = createPlay();
+
+  // Sends each user their own message, if they have one.
+  const sendEach = (roomId: string, messages: Map<string, RoomMessage>) => {
+    for (const socket of sockets.get(roomId)?.values() ?? []) {
+      const message = messages.get(socket.userId);
+      if (message) socket.send(message);
+    }
+  };
 
   const view = async (room: Room): Promise<RoomView> => {
     const names = await db
@@ -128,6 +138,9 @@ export const roomRoutes = (db: Db, session: Session) => {
   const notOwner = (room: Room, userId: string) =>
     room.ownerId === userId ? undefined : fail(403, 'not_the_owner');
 
+  const matchRunning = (room: Room) =>
+    play.isRunning(room.id) ? fail(409, 'match_running') : undefined;
+
   const leave = (room: Room, userId: string) => {
     if (room.ownerId === userId) {
       const owner = nextOwner(room);
@@ -200,7 +213,7 @@ export const roomRoutes = (db: Db, session: Session) => {
       '/:id/seat',
       async ({ userId, params: { id }, body: { seat } }) =>
         (await update(id, (room) => {
-          const failure = notMember(room, userId);
+          const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;
           const taken = room.seats[seat];
           if (taken && taken !== userId) return fail(409, 'seat_taken');
@@ -218,7 +231,7 @@ export const roomRoutes = (db: Db, session: Session) => {
       '/:id/seat',
       async ({ userId, params: { id } }) =>
         (await update(id, (room) => {
-          const failure = notMember(room, userId);
+          const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;
           room.seats = room.seats.map((s) => (s === userId ? null : s));
         }))!,
@@ -270,14 +283,19 @@ export const roomRoutes = (db: Db, session: Session) => {
     )
     .post(
       '/:id/start',
-      // A stub until play arrives: it only checks who may start and when.
       async ({ userId, params: { id } }) => {
         const result = await update(id, (room) => {
           const failure = notOwner(room, userId);
           if (failure) return failure;
           if (room.seats.includes(null)) return fail(409, 'seats_not_full');
+          return matchRunning(room);
         });
         if ('code' in result!) return result;
+        const seated = result!.seats as string[];
+        sendEach(
+          id,
+          play.start(id, seated, { targetScore: result!.targetScore }),
+        );
         return { started: true };
       },
       { auth: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
@@ -301,6 +319,21 @@ export const roomRoutes = (db: Db, session: Session) => {
         const roomSockets = sockets.get(params.id) ?? new Map();
         sockets.set(params.id, roomSockets.set(ws.id, socket));
         socket.send({ type: 'room', room: await view(room) });
+        const match = play.viewFor(params.id, userId);
+        if (match) socket.send(match);
+      },
+      message(ws, intent: Partial<MatchIntent>) {
+        const { userId, params } = ws.data;
+        if (intent?.type !== 'match:move') return;
+        const moved = play.move(params.id, userId, intent.move ?? {});
+        if (moved.ok) sendEach(params.id, moved.views);
+        else
+          ws.send(
+            JSON.stringify({
+              type: 'match:rejected',
+              reason: moved.reason,
+            } satisfies RoomMessage),
+          );
       },
       close(ws) {
         sockets.get(ws.data.params.id)?.delete(ws.id);

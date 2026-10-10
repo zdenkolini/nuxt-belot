@@ -15,6 +15,7 @@
       "name": "@belot/server",
       "dependencies": {
         "@belot/db": "workspace:*",
+        "@belot/engine": "workspace:*",
         "@elysiajs/cors": "catalog:",
         "better-auth": "catalog:",
         "drizzle-orm": "catalog:",
@@ -29,6 +30,7 @@
     "apps/web": {
       "name": "@belot/web",
       "dependencies": {
+        "@belot/engine": "workspace:*",
         "@belot/server": "workspace:*",
         "@elysiajs/eden": "catalog:",
         "@tanstack/svelte-query": "^6.3.1",

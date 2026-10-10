@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@belot/db": "workspace:*",
+    "@belot/engine": "workspace:*",
     "@elysiajs/cors": "catalog:",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
