@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
   belot,
+  replay,
   type BelotEvent,
   type BelotMove,
   type BelotState,
   type Card,
   type Seat,
   type Suit,
+  type Team,
 } from './index';
 
 const variant = { targetScore: 501 } as const;
@@ -572,5 +574,121 @@ describe('deal scoring', () => {
     expect(score.failed).toBe(true);
     expect(score.points[callers]).toBe(0);
     expect(score.points[others]).toBe(162);
+  });
+});
+
+type Logged = { seat: Seat; move: BelotMove };
+
+// Plays a whole match with varied legal moves, from calling to the match end.
+const playMatch = (seed: number, targetScore: 501 | 701 | 1001) => {
+  let state = belot.setup({ targetScore }, 4, seed);
+  const moves: Logged[] = [];
+  const events: BelotEvent[] = [];
+  const results: unknown[] = [];
+  for (let n = 0; n < 5000; n++) {
+    const seat = seats.find((s) => belot.legalMoves(state, s).length > 0);
+    if (seat === undefined) break;
+    results.push(belot.result(state));
+    const legal = belot.legalMoves(state, seat);
+    const move = legal[(seed * 7 + n * 3) % legal.length]!;
+    const applied = belot.apply(state, seat, move);
+    if (!applied.ok) throw new Error(applied.reason);
+    state = applied.state;
+    moves.push({ seat, move });
+    events.push(...applied.events);
+  }
+  return { state, moves, events, results };
+};
+
+// Running totals after each deal, and the calling team of each deal.
+const totals = (events: BelotEvent[]) => {
+  const running: [number, number][] = [];
+  const callers: Team[] = [];
+  let scores: [number, number] = [0, 0];
+  for (const event of events) {
+    if (event.type === 'called') callers.push((event.seat % 2) as Team);
+    if (event.type === 'dealScored') {
+      scores = [
+        scores[0] + event.score.points[0]!,
+        scores[1] + event.score.points[1]!,
+      ];
+      running.push(scores);
+    }
+  }
+  return { running, callers };
+};
+
+describe('match', () => {
+  for (const targetScore of [501, 701, 1001] as const) {
+    test(`a match to ${targetScore} ends after the first deal where a team reaches it`, () => {
+      const { events, results, state } = playMatch(42, targetScore);
+      const { running, callers } = totals(events);
+      const end = running.findIndex(
+        ([a, b]) => a >= targetScore || b >= targetScore,
+      );
+      expect(end).toBe(running.length - 1);
+      const [a, b] = running[end]!;
+      const winner = a === b ? callers[end]! : a > b ? 0 : 1;
+      expect(events.at(-1)).toEqual({
+        type: 'matchEnded',
+        result: { winner, scores: [a, b] },
+      });
+      expect(results.every((result) => result === null)).toBe(true);
+      expect(belot.result(state)).toEqual({ winner, scores: [a, b] });
+      expect(belot.view(state, 0).scores).toEqual([a, b]);
+    });
+  }
+
+  // Searches seeded matches to 501 for one whose final deal fits.
+  const findEnd = (
+    fits: (final: [number, number], caller: Team) => boolean,
+  ) => {
+    for (let seed = 0; seed < 3000; seed++) {
+      const match = playMatch(seed, 501);
+      const { running, callers } = totals(match.events);
+      if (fits(running.at(-1)!, callers.at(-1)!)) return match;
+    }
+    throw new Error('no matching match');
+  };
+
+  test('when both teams reach the target score in one deal, the higher total wins', () => {
+    const { state } = findEnd(([a, b]) => a >= 501 && b >= 501 && a !== b);
+    const { scores, winner } = belot.result(state)!;
+    expect(winner).toBe(scores[0]! > scores[1]! ? 0 : 1);
+  });
+
+  test('when both teams reach the target score with equal totals, the calling team wins', () => {
+    const { state, events } = findEnd(([a, b]) => a >= 501 && a === b);
+    expect(belot.result(state)!.winner).toBe(totals(events).callers.at(-1)!);
+  });
+
+  test('no seat has a legal move after the match ends', () => {
+    const { state, moves } = playMatch(7, 501);
+    for (const seat of seats) {
+      expect(belot.legalMoves(state, seat)).toEqual([]);
+      expect(belot.apply(state, seat, { type: 'pass' }).ok).toBe(false);
+    }
+    expect(belot.apply(state, moves.at(-1)!.seat, moves.at(-1)!.move).ok).toBe(
+      false,
+    );
+  });
+});
+
+describe('replay', () => {
+  test('replaying seed, variant, and moves gives the live state and events', () => {
+    const live = playMatch(42, 701);
+    const replayed = replay(belot, { targetScore: 701 }, 4, 42, live.moves);
+    expect(replayed).toEqual({
+      ok: true,
+      state: live.state,
+      events: live.events,
+    });
+  });
+
+  test('replay rejects a log with an illegal move', () => {
+    const live = playMatch(42, 701);
+    const moves = [...live.moves];
+    moves[5] = moves[4]!;
+    expect(replay(belot, { targetScore: 701 }, 4, 42, moves).ok).toBe(false);
   });
 });
