@@ -120,3 +120,17 @@ test('any seated player can end a paused match for all players', async () => {
   expect(match.ended).toBe(false);
   expect(match.view.hand).toHaveLength(6);
 });
+
+test('a socket that closes while it opens still leaves the player missing', async () => {
+  const { roomId, players, sockets, connect } = await started();
+  sockets[1]!.ws.close();
+  await nextOf(sockets[0]!, 'match');
+
+  const quick = await connect(roomId, players[1]!);
+  quick.ws.addEventListener('open', () => quick.ws.close());
+  while (!quick.isClosed()) await quick.next();
+
+  const again = await connect(roomId, players[0]!);
+  const { match } = await nextOf(again, 'match');
+  expect(match.missing).toEqual([players[1]!.id]);
+});

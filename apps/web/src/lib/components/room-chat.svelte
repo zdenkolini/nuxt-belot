@@ -22,15 +22,11 @@
 
 	$effect(() => {
 		// Mounted again on an open socket (lobby to table): ask now.
-		let asked = socket.ws.readyState === WebSocket.OPEN;
-		if (asked) send({ type: 'chat.history' });
+		if (socket.ws.readyState === WebSocket.OPEN) send({ type: 'chat.history' });
+		else socket.on('open', () => send({ type: 'chat.history' }), { once: true });
 		socket.subscribe(({ data }) => {
 			const message = data as RoomMessage;
-			// The first room message means the server knows this socket.
-			if (message.type === 'room' && !asked) {
-				asked = true;
-				send({ type: 'chat.history' });
-			} else if (message.type === 'chat.message') {
+			if (message.type === 'chat.message') {
 				messages = [...messages, message.message];
 			} else if (message.type === 'chat.history') {
 				messages = message.messages;

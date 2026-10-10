@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { setup } from './test-setup';
+import { nextOf, setup } from './test-setup';
 
 // Ana's room with Bob and Cara in it, each with an open room socket.
 const chatRoom = async () => {
@@ -88,5 +88,19 @@ test('a newly opened room socket asks for recent chat, still without muted playe
     type: 'chat.history',
     messages: [{ from: ana.id, text: 'one' }],
     muted: [cara.id],
+  });
+});
+
+test('a message sent as soon as the room socket opens is not lost', async () => {
+  const { roomId, connect, ana } = await chatRoom();
+  ana.socket.send({ type: 'chat.send', text: 'early' });
+  await ana.socket.next();
+
+  const tab = await connect(roomId, ana);
+  tab.ws.addEventListener('open', () =>
+    tab.ws.send(JSON.stringify({ type: 'chat.history' })),
+  );
+  expect(await nextOf(tab, 'chat.history')).toMatchObject({
+    messages: [{ from: ana.id, text: 'early' }],
   });
 });

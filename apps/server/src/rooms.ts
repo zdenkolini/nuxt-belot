@@ -162,6 +162,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
     room.seats = room.seats.map((id) => (id === userId ? null : id));
   };
 
+  // Opening a socket reads the room first. Messages and the close that come
+  // meanwhile wait for it, by connection id.
+  const opening = new Map<string, Promise<void>>();
+
   return new Elysia({ prefix: '/rooms' })
     .use(session)
     .get(
@@ -315,31 +319,37 @@ export const roomRoutes = async (db: Db, session: Session) => {
     .ws('/:id/ws', {
       auth: true,
       params: t.Object({ id: t.String({ format: 'uuid' }) }),
-      async open(ws) {
+      open(ws) {
         const { userId, params } = ws.data;
-        const [room] = await db
-          .select()
-          .from(rooms)
-          .where(eq(rooms.id, params.id));
-        if (!room || !room.members.includes(userId))
-          return ws.close(4403, 'not_a_member');
-        const socket: Socket = {
-          userId,
-          send: (message) => ws.send(JSON.stringify(message)),
-          close: () => ws.close(),
+        const open = async () => {
+          const [room] = await db
+            .select()
+            .from(rooms)
+            .where(eq(rooms.id, params.id));
+          if (!room || !room.members.includes(userId))
+            return ws.close(4403, 'not_a_member');
+          const socket: Socket = {
+            userId,
+            send: (message) => ws.send(JSON.stringify(message)),
+            close: () => ws.close(),
+          };
+          const roomSockets = sockets.get(params.id) ?? new Map();
+          sockets.set(params.id, roomSockets.set(ws.id, socket));
+          socket.send({ type: 'room', room: await view(room) });
+          // A seated player coming back may end the pause for everyone.
+          if (play.isSeated(params.id, userId)) {
+            sendEach(params.id, play.viewsOf(params.id));
+          } else {
+            const match = play.viewFor(params.id, userId);
+            if (match) socket.send(match);
+          }
         };
-        const roomSockets = sockets.get(params.id) ?? new Map();
-        sockets.set(params.id, roomSockets.set(ws.id, socket));
-        socket.send({ type: 'room', room: await view(room) });
-        // A seated player coming back may end the pause for everyone.
-        if (play.isSeated(params.id, userId)) {
-          sendEach(params.id, play.viewsOf(params.id));
-        } else {
-          const match = play.viewFor(params.id, userId);
-          if (match) socket.send(match);
-        }
+        const opened = open();
+        opening.set(ws.id, opened);
+        return opened;
       },
       async message(ws, body) {
+        await opening.get(ws.id);
         const intent = (
           typeof body === 'string' ? JSON.parse(body) : body
         ) as Partial<ChatIntent | MatchIntent> | null;
@@ -363,8 +373,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
           ]);
         }
       },
-      close(ws) {
+      async close(ws) {
         const { userId, params } = ws.data;
+        await opening.get(ws.id);
+        opening.delete(ws.id);
         sockets.get(params.id)?.delete(ws.id);
         // A seated player gone pauses the match for everyone.
         if (play.isSeated(params.id, userId)) {
