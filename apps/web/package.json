@@ -11,16 +11,20 @@
   },
   "dependencies": {
     "@belot/server": "workspace:*",
-    "@elysiajs/eden": "^1.4.0"
+    "@elysiajs/eden": "^1.4.0",
+    "@tanstack/svelte-query": "^6.3.1",
+    "better-auth": "^1.7.7"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@inlang/paraglide-js": "^2.18.2",
+    "@internationalized/date": "^3.12.0",
     "@lucide/svelte": "^1.55.0",
     "@sveltejs/adapter-static": "^4.0.0",
     "@sveltejs/kit": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "@tailwindcss/vite": "^4.3.0",
+    "bits-ui": "^2.18.0",
     "cn": "^0.4.0",
     "shadcn-svelte": "^1.7.0",
     "svelte": "^5.57.1",
