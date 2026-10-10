@@ -91,6 +91,16 @@ test('a newly opened room socket asks for recent chat, still without muted playe
   });
 });
 
+test('a malformed socket message is ignored', async () => {
+  const { ana } = await chatRoom();
+  ana.socket.ws.send('{not json');
+  ana.socket.ws.send('null');
+  ana.socket.send({ type: 5 });
+  ana.socket.send({ type: 'chat.history' });
+  expect(await ana.socket.next()).toMatchObject({ type: 'chat.history' });
+  expect(ana.socket.isClosed()).toBe(false);
+});
+
 test('a message sent as soon as the room socket opens is not lost', async () => {
   const { roomId, connect, ana } = await chatRoom();
   ana.socket.send({ type: 'chat.send', text: 'early' });

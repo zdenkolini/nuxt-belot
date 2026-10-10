@@ -353,9 +353,10 @@ export const roomRoutes = async (db: Db, session: Session) => {
       },
       async message(ws, body) {
         await opening.get(ws.id);
-        const intent = (
-          typeof body === 'string' ? JSON.parse(body) : body
-        ) as Partial<ChatIntent | MatchIntent> | null;
+        // Elysia parses JSON messages; anything else is not an intent.
+        const intent = (typeof body === 'object' ? body : null) as Partial<
+          ChatIntent | MatchIntent
+        > | null;
         const roomSockets = sockets.get(ws.data.params.id);
         const socket = roomSockets?.get(ws.id);
         if (!roomSockets || !socket) return;
@@ -370,7 +371,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
               : await play.end(ws.data.params.id, socket.userId);
           if (done.ok) sendEach(ws.data.params.id, done.views);
           else socket.send({ type: 'match.rejected', reason: done.reason });
-        } else if (intent?.type?.startsWith('chat.')) {
+        } else if (String(intent?.type).startsWith('chat.')) {
           chat.handle(ws.data.params.id, socket, intent as ChatIntent, [
             ...roomSockets.values(),
           ]);
