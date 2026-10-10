@@ -1,14 +1,28 @@
 import { expect, test } from 'bun:test';
+import { matches, type Db } from '@belot/db';
 import type { BelotMove, Declaration } from '@belot/engine';
+import { desc } from 'drizzle-orm';
 import { nextOf, send, table } from './test-setup';
 
 type PlayMove = Extract<BelotMove, { type: 'play' }>;
 
+// The seed of the last started match, as saved.
+const lastSeed = async (db: Db) => {
+  const [match] = await db
+    .select({ seed: matches.seed })
+    .from(matches)
+    .orderBy(desc(matches.createdAt))
+    .limit(1);
+  return match!.seed;
+};
+
 test('starting a match sends each seat its own view and nothing of the seed', async () => {
-  const { room, players, sockets } = await table();
+  const { db, room, players, sockets } = await table();
 
   const { status } = await room.start.post({}, players[0]!);
   expect(status).toBe(200);
+  const seed = await lastSeed(db);
+  expect(seed).toMatch(/^[0-9a-f]{32}$/);
 
   for (const [seat, socket] of sockets.entries()) {
     const message = await nextOf(socket, 'match');
@@ -16,7 +30,7 @@ test('starting a match sends each seat its own view and nothing of the seed', as
     expect(message.match.view.hand).toHaveLength(6);
     expect(message.match.view.cardCounts).toEqual([6, 6, 6, 6]);
     expect(message.match.result).toBeNull();
-    expect(JSON.stringify(message)).not.toContain('seed');
+    expect(JSON.stringify(message)).not.toContain(seed);
   }
 });
 
@@ -89,10 +103,11 @@ test('seats stay fixed while a match runs, and a reopened socket gets the curren
 });
 
 test('four players play a full match to the target score, each seeing only their own hand, then play again', async () => {
-  const { room, players, sockets } = await table();
+  const { db, room, players, sockets } = await table();
   const [ana] = players;
   await room.patch({ targetScore: 501 }, ana!);
   await room.start.post({}, ana!);
+  const seed = await lastSeed(db);
   let views = await Promise.all(sockets.map((s) => nextOf(s, 'match')));
   expect((await room.start.post({}, ana!)).error?.value).toEqual({
     error: 'match_running',
@@ -122,7 +137,7 @@ test('four players play a full match to the target score, each seeing only their
         .filter((id) => !announced.includes(id));
       const sent = JSON.stringify(match);
       for (const id of others) expect(sent).not.toContain(id);
-      expect(sent).not.toContain('seed');
+      expect(sent).not.toContain(seed);
     }
   }
 
