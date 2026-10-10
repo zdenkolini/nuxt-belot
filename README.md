@@ -11,6 +11,8 @@ Online multiplayer belot. Bun workspaces monorepo:
 bun install
 bun run test       # all tests
 bun run typecheck  # all type checks
-bun run --filter @belot/server dev
-bun run --filter @belot/web dev
+bun run dev        # server (:3000) and web (:5173) together
+mprocs             # same, in a TUI with one pane per process
 ```
+
+`mprocs` is optional: `brew install mprocs`.
