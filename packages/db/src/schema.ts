@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -8,9 +10,18 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+// Members, seats and removed hold user ids; seats is indexed by seat 0-3.
 export const rooms = pgTable('rooms', {
   id: uuid().primaryKey().defaultRandom(),
   createdAt: timestamp().notNull().defaultNow(),
+  ownerId: text()
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  isPublic: boolean().notNull().default(false),
+  targetScore: integer().notNull().default(1001),
+  members: jsonb().$type<string[]>().notNull(),
+  seats: jsonb().$type<(string | null)[]>().notNull(),
+  removed: jsonb().$type<string[]>().notNull().default([]),
 });
 
 // Better Auth tables: user, session, account, verification.

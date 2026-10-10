@@ -24,8 +24,19 @@
 			: null;
 	});
 
+	// An invite link opened before sign-in is kept, so the player lands in the
+	// room once signed in. localStorage, because the magic link opens a new tab.
 	$effect(() => {
-		if (target && target !== page.url.pathname) goto(target);
+		const path = page.url.pathname;
+		if (target === '/sign-in' && path.startsWith('/rooms/')) {
+			localStorage.setItem('returnTo', path);
+		}
+		const returnTo = localStorage.getItem('returnTo');
+		if (!target && me.data?.username && returnTo) {
+			localStorage.removeItem('returnTo');
+			if (returnTo !== path) return void goto(returnTo);
+		}
+		if (target && target !== path) goto(target);
 	});
 </script>
 
