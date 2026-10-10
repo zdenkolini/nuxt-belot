@@ -1,13 +1,12 @@
 import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray } from 'drizzle-orm';
+import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
 import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
 import { createPlay, type MatchIntent, type MatchMessage } from './play';
 import type { Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
-
-export type TargetScore = 501 | 701 | 1001;
 
 export type RoomView = {
   id: string;
@@ -43,6 +42,13 @@ const fail = <Code extends 403 | 404 | 409, Error extends string>(
   code: Code,
   error: Error,
 ) => status(code, { error });
+
+// t.UnionEnum would default a missing target score to 501.
+const targetScore = t.Union(
+  targetScores.map((score) => t.Literal(score)) as [
+    ReturnType<typeof t.Literal<TargetScore>>,
+  ],
+);
 
 // The next seated player counter-clockwise from the owner's seat, else the
 // longest-staying member.
@@ -82,7 +88,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
       id: room.id,
       ownerId: room.ownerId,
       isPublic: room.isPublic,
-      targetScore: room.targetScore as TargetScore,
+      targetScore: room.targetScore,
       members: room.members.map((id) => ({
         id,
         username: names.find((n) => n.id === id)?.username ?? null,
@@ -180,7 +186,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         return list.map(({ room, owner }) => ({
           id: room.id,
           owner,
-          targetScore: room.targetScore as TargetScore,
+          targetScore: room.targetScore,
           freeSeats: room.seats.filter((id) => id === null).length,
         }));
       },
@@ -271,9 +277,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         params: t.Object({ id: t.String({ format: 'uuid' }) }),
         body: t.Object({
           isPublic: t.Optional(t.Boolean()),
-          targetScore: t.Optional(
-            t.Union([t.Literal(501), t.Literal(701), t.Literal(1001)]),
-          ),
+          targetScore: t.Optional(targetScore),
         }),
       },
     )

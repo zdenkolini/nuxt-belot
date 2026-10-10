@@ -8,6 +8,7 @@ import {
   type Card,
   type Seat,
   type Suit,
+  type TargetScore,
   type Team,
 } from './index';
 
@@ -1003,7 +1004,7 @@ describe('full sequence', () => {
 type Logged = { seat: Seat; move: BelotMove };
 
 // Plays a whole match with varied legal moves, from calling to the match end.
-const playMatch = (seed: number, targetScore: 501 | 701 | 1001) => {
+const playMatch = (seed: number, targetScore: TargetScore) => {
   let state = belot.setup({ targetScore }, 4, seedOf(seed));
   const moves: Logged[] = [];
   const events: BelotEvent[] = [];

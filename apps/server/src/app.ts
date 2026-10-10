@@ -9,7 +9,7 @@ import { createSession } from './session';
 export type { Email } from './auth';
 export type { ChatIntent, ChatMessage } from './chat';
 export type { MatchIntent, MatchView, MoveRejection } from './play';
-export type { PublicRoom, RoomMessage, RoomView, TargetScore } from './rooms';
+export type { PublicRoom, RoomMessage, RoomView } from './rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 

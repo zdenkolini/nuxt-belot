@@ -3,8 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
-	import type { BelotMove, DealScore, Play, Seat } from '@belot/engine';
-	import type { MatchView, RoomMessage, RoomView, TargetScore } from '@belot/server';
+	import { targetScores, type BelotMove, type DealScore, type Play, type Seat } from '@belot/engine';
+	import type { MatchView, RoomMessage, RoomView } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
 	import RoomChat from '#lib/components/room-chat.svelte';
@@ -14,7 +14,6 @@
 	import MatchPause from '#lib/components/match-pause.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
-	const targetScores: TargetScore[] = [501, 701, 1001];
 	const id = $derived(page.params.id!);
 	const me = createQuery(() => meQuery);
 

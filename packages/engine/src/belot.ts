@@ -11,7 +11,9 @@ import {
 } from './cards';
 import type { Applied, Ruleset, Seat } from './ruleset';
 
-export type BelotVariant = { targetScore: 501 | 701 | 1001 };
+export const targetScores = [501, 701, 1001] as const;
+export type TargetScore = (typeof targetScores)[number];
+export type BelotVariant = { targetScore: TargetScore };
 
 export type BelotMove =
   | { type: 'pass' }

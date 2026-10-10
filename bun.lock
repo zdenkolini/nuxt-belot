@@ -60,6 +60,7 @@
     "packages/db": {
       "name": "@belot/db",
       "dependencies": {
+        "@belot/engine": "workspace:*",
         "@electric-sql/pglite": "^0.3.0",
         "drizzle-orm": "catalog:",
       },
