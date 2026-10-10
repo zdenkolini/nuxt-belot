@@ -38,7 +38,7 @@
 	const view = $derived(match.view);
 	const myTeam = $derived((match.seat % 2) as Team);
 	const usernameOf = (seat: Seat) => match.players[seat]?.username ?? '';
-	// Seats around the table from my point of view: 0 me, 1 right, 2 top, 3 left.
+	// Seats from my point of view: 0 me, 1 right, 2 top, 3 left.
 	const at = (offset: number) => ((match.seat + offset) % 4) as Seat;
 	const placeOf = (seat: Seat) => (seat - match.seat + 4) % 4;
 	const places = [

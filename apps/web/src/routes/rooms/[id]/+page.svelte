@@ -10,7 +10,7 @@
 	import RoomChat from '#lib/components/room-chat.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
-	import MatchTable from '#lib/components/table/match-table.svelte';
+	import MatchScreen from '#lib/components/match/match-screen.svelte';
 	import MatchPause from '#lib/components/match-pause.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
@@ -133,7 +133,7 @@
 </svelte:head>
 
 {#if room && match && !closedReason}
-	<MatchTable
+	<MatchScreen
 		{match}
 		{room}
 		{lastTrick}
@@ -149,7 +149,7 @@
 				<RoomChat {socket} members={room!.members} myId={me.data?.id} />
 			{/if}
 		{/snippet}
-	</MatchTable>
+	</MatchScreen>
 	<MatchPause {match} onend={() => endMatch?.()} onback={backToRoom} />
 	{#if notice}
 		<p class="fixed inset-x-0 top-2 z-20 mx-auto w-fit rounded-md bg-foreground px-3 py-1 text-sm text-background" role="status">

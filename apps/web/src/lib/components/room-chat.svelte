@@ -21,7 +21,7 @@
 	const send = (intent: ChatIntent) => socket.send(intent);
 
 	$effect(() => {
-		// Mounted again on an open socket (lobby to table): ask now.
+		// Mounted again on an open socket (room to match): ask now.
 		if (socket.ws.readyState === WebSocket.OPEN) send({ type: 'chat.history' });
 		else socket.on('open', () => send({ type: 'chat.history' }), { once: true });
 		socket.subscribe(({ data }) => {

@@ -266,23 +266,23 @@ const fullSequence = (suit: Suit, trump: Suit) =>
 const declarationsOf = (seat: Seat, hand: Card[], trump: Suit) => {
   const found: Declaration[] = [];
   for (const suit of suits) {
-    let run: Card[] = [];
+    let sequence: Card[] = [];
     for (const rank of [...ranks, null]) {
       const card = hand.find(
         (held) => held.suit === suit && held.rank === rank,
       );
       if (card) {
-        run.push(card);
+        sequence.push(card);
         continue;
       }
-      if (run.length === 8) {
+      if (sequence.length === 8) {
         const { points } = fullSequence(suit, trump);
-        found.push({ seat, kind: 'fullSequence', cards: run, points });
-      } else if (run.length >= 3) {
-        const points = sequencePoints(run.length);
-        found.push({ seat, kind: 'sequence', cards: run, points });
+        found.push({ seat, kind: 'fullSequence', cards: sequence, points });
+      } else if (sequence.length >= 3) {
+        const points = sequencePoints(sequence.length);
+        found.push({ seat, kind: 'sequence', cards: sequence, points });
       }
-      run = [];
+      sequence = [];
     }
   }
   for (const [rank, points] of Object.entries(fourOfAKindPoints)) {
