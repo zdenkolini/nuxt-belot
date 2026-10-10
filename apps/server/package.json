@@ -1,0 +1,25 @@
+{
+  "name": "@belot/server",
+  "private": true,
+  "type": "module",
+  "exports": "./src/app.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "test": "bun test",
+    "typecheck": "bun --bun tsc"
+  },
+  "dependencies": {
+    "@belot/db": "workspace:*",
+    "@belot/engine": "workspace:*",
+    "@elysiajs/cors": "catalog:",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
+    "elysia": "catalog:"
+  },
+  "devDependencies": {
+    "@elysiajs/eden": "catalog:",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

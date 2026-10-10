@@ -1,0 +1,21 @@
+{
+  "name": "@belot/db",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bun --bun tsc",
+    "generate": "bun --bun drizzle-kit generate"
+  },
+  "dependencies": {
+    "@belot/engine": "workspace:*",
+    "@electric-sql/pglite": "^0.3.0",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "drizzle-kit": "^0.31.0",
+    "typescript": "catalog:"
+  }
+}
