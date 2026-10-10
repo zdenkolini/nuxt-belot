@@ -5,8 +5,8 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc",
-    "generate": "drizzle-kit generate"
+    "typecheck": "bun --bun tsc",
+    "generate": "bun --bun drizzle-kit generate"
   },
   "dependencies": {
     "@belot/engine": "workspace:*",

@@ -7,7 +7,7 @@
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
     "test": "bun test",
-    "typecheck": "tsc"
+    "typecheck": "bun --bun tsc"
   },
   "dependencies": {
     "@belot/db": "workspace:*",

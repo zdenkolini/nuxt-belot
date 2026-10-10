@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "prepare": "svelte-kit sync || echo ''",
-    "typecheck": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "dev": "bun --bun vite dev",
+    "build": "bun --bun vite build",
+    "preview": "bun --bun vite preview",
+    "prepare": "bun --bun svelte-kit sync || echo ''",
+    "typecheck": "bun --bun paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
     "@belot/engine": "workspace:*",
