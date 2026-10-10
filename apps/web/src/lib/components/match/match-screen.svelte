@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import type { BelotMove, DealScore, Play, Seat, Team } from '@belot/engine';
+	import type { BelotMove, DealScore, Seat, Team, Trick } from '@belot/engine';
 	import type { MatchView, RoomView } from '@belot/server';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -25,7 +25,7 @@
 	}: {
 		match: MatchView;
 		room: RoomView;
-		lastTrick: { plays: Play[]; winner: Seat } | null;
+		lastTrick: Trick | null;
 		dealScore: DealScore | null;
 		isOwner: boolean;
 		onmove: (move: BelotMove) => void;

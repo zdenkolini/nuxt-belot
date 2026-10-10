@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { targetScores, type BelotMove, type DealScore, type Play, type Seat } from '@belot/engine';
+	import { targetScores, type BelotMove, type DealScore, type Trick } from '@belot/engine';
 	import type { MatchView, RoomMessage, RoomView } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api, type RoomSocket } from '#lib/api.js';
@@ -25,7 +25,7 @@
 	let socket = $state<RoomSocket | null>(null);
 	// Replaced wholesale by each match view the server sends.
 	let match = $state<MatchView | null>(null);
-	let lastTrick = $state<{ plays: Play[]; winner: Seat } | null>(null);
+	let lastTrick = $state<Trick | null>(null);
 	let dealScore = $state<DealScore | null>(null);
 	let sendMove: ((move: BelotMove) => void) | undefined;
 	let endMatch: (() => void) | undefined;
