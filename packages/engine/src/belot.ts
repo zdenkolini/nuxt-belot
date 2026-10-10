@@ -1,9 +1,11 @@
 import {
   belotDeck,
   ranks,
+  seeded,
   shuffle,
   suits,
   type Card,
+  type Random,
   type Rank,
   type Suit,
 } from './cards';
@@ -70,7 +72,8 @@ export type Deal = {
 
 export type BelotState = {
   variant: BelotVariant;
-  seed: number;
+  // The generator state after the last shuffle; the next deal shuffles from it.
+  random: Random;
   deals: number;
   scores: TeamPoints;
   result: BelotResult | null;
@@ -93,9 +96,9 @@ export type BelotView = {
 
 const rightOf = (seat: Seat) => ((seat + 1) % 4) as Seat;
 
-const startDeal = (dealer: Seat, seed: number): Deal => {
-  const deck = shuffle(belotDeck(), seed);
-  return {
+const startDeal = (dealer: Seat, from: Random): [Deal, Random] => {
+  const [deck, random] = shuffle(belotDeck(), from);
+  const deal: Deal = {
     phase: 'calling',
     dealer,
     turn: rightOf(dealer),
@@ -108,6 +111,7 @@ const startDeal = (dealer: Seat, seed: number): Deal => {
     declarations: [],
     belote: null,
   };
+  return [deal, random];
 };
 
 // Rank order from lowest to highest.
@@ -408,14 +412,15 @@ const playCard = (
         events,
       };
     }
-    const deals = state.deals + 1;
+    const [next, random] = startDeal(rightOf(deal.dealer), state.random);
     return {
       ok: true,
       state: {
         ...state,
-        deals,
+        random,
+        deals: state.deals + 1,
         scores,
-        deal: startDeal(rightOf(deal.dealer), state.seed + deals + 1),
+        deal: next,
       },
       events,
     };
@@ -431,16 +436,10 @@ const playCard = (
 };
 
 export const belot = {
-  setup: (variant: BelotVariant, _seats: number, seed: number): BelotState => {
-    const dealer = shuffle([0, 1, 2, 3] as const, seed)[0]!;
-    return {
-      variant,
-      seed,
-      deals: 0,
-      scores: [0, 0],
-      result: null,
-      deal: startDeal(dealer, seed + 1),
-    };
+  setup: (variant: BelotVariant, _seats: number, seed: string): BelotState => {
+    const [dealers, afterDealer] = shuffle([0, 1, 2, 3] as const, seeded(seed));
+    const [deal, random] = startDeal(dealers[0]!, afterDealer);
+    return { variant, random, deals: 0, scores: [0, 0], result: null, deal };
   },
   legalMoves,
   apply: (

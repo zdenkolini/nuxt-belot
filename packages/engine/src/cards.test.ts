@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { belotDeck, shuffle } from './index';
+import { belotDeck, seeded, shuffle } from './index';
+
+const shuffled = (n: number) =>
+  shuffle(belotDeck(), seeded(n.toString(16).padStart(32, '0')))[0];
 
 const byId = (cards: { id: string }[]) =>
   [...cards].sort((a, b) => a.id.localeCompare(b.id));
@@ -14,25 +17,35 @@ describe('belot deck', () => {
     );
     expect(
       deck.filter((card) => card.suit === 'hearts').map((card) => card.rank),
-    ).toEqual(['seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 'ace']);
+    ).toEqual([
+      'seven',
+      'eight',
+      'nine',
+      'ten',
+      'jack',
+      'queen',
+      'king',
+      'ace',
+    ]);
   });
 });
 
 describe('seeded shuffle', () => {
   test('the same seed always gives the same order', () => {
-    expect(shuffle(belotDeck(), 42)).toEqual(shuffle(belotDeck(), 42));
+    expect(shuffled(42)).toEqual(shuffled(42));
   });
 
   test('different seeds give different orders', () => {
-    expect(shuffle(belotDeck(), 1)).not.toEqual(shuffle(belotDeck(), 2));
+    expect(shuffled(1)).not.toEqual(shuffled(2));
   });
 
   test('keeps every card and leaves the input untouched', () => {
     const deck = belotDeck();
-    const shuffled = shuffle(deck, 7);
+    const random = seeded('7'.padStart(32, '0'));
+    const [result] = shuffle(deck, random);
     expect(deck).toEqual(belotDeck());
-    expect(shuffled).not.toEqual(deck);
-    expect(byId(shuffled)).toEqual(byId(deck));
+    expect(result).not.toEqual(deck);
+    expect(byId(result)).toEqual(byId(deck));
   });
 
   test('never reads Math.random', () => {
@@ -41,7 +54,7 @@ describe('seeded shuffle', () => {
       throw new Error('Math.random was called');
     };
     try {
-      shuffle(belotDeck(), 3);
+      shuffled(3);
     } finally {
       Math.random = original;
     }

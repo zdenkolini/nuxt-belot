@@ -50,7 +50,7 @@ type LiveMatch = {
   id: string;
   ended: boolean;
   variant: BelotVariant;
-  seed: number;
+  seed: string;
   seats: string[];
   log: Logged<BelotMove>[];
   state: BelotState;
@@ -58,7 +58,8 @@ type LiveMatch = {
 
 const seats = [0, 1, 2, 3] as const;
 
-const cryptoSeed = () => crypto.getRandomValues(new Uint32Array(1))[0]!;
+// 128 random bits as 32 hex digits.
+const cryptoSeed = () => crypto.getRandomValues(new Uint8Array(16)).toHex();
 
 // The one place that holds live matches, by room id. Each match and its
 // moves are saved as they happen; running matches are rebuilt on start.

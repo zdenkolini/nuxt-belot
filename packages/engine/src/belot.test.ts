@@ -13,11 +13,15 @@ import {
 
 const variant = { targetScore: 501 } as const;
 const seats = [0, 1, 2, 3] as const;
+// A 128-bit seed, as 32 hex digits, from a small number.
+const seedOf = (n: number) => n.toString(16).padStart(32, '0');
+const handsOf = (state: BelotState) =>
+  seats.map((seat) => belot.view(state, seat).hand);
 
 describe('setup', () => {
   test('a fixed seed gives the same first dealer and six-card hands', () => {
-    const state = belot.setup(variant, 4, 42);
-    expect(belot.setup(variant, 4, 42)).toEqual(state);
+    const state = belot.setup(variant, 4, seedOf(42));
+    expect(belot.setup(variant, 4, seedOf(42))).toEqual(state);
     for (const seat of seats) {
       expect(belot.view(state, seat).hand).toHaveLength(6);
     }
@@ -27,10 +31,17 @@ describe('setup', () => {
     const dealers = new Set(
       Array.from(
         { length: 20 },
-        (_, seed) => belot.view(belot.setup(variant, 4, seed), 0).dealer,
+        (_, seed) =>
+          belot.view(belot.setup(variant, 4, seedOf(seed)), 0).dealer,
       ),
     );
     expect(dealers).toEqual(new Set(seats));
+  });
+
+  test('every bit of the 128-bit seed changes the deal', () => {
+    const low = belot.setup(variant, 4, `${'0'.repeat(31)}1`);
+    const high = belot.setup(variant, 4, `8${'0'.repeat(30)}1`);
+    expect(handsOf(high)).not.toEqual(handsOf(low));
   });
 });
 
@@ -44,7 +55,7 @@ const play = (state: BelotState, seat: Seat, move: BelotMove) => {
 
 describe('calling', () => {
   test('the seat right of the dealer speaks first, then calling moves counter-clockwise', () => {
-    let state = belot.setup(variant, 4, 42);
+    let state = belot.setup(variant, 4, seedOf(42));
     let speaker = rightOf(belot.view(state, 0).dealer);
     for (let i = 0; i < 3; i++) {
       for (const seat of seats) {
@@ -58,7 +69,7 @@ describe('calling', () => {
   });
 
   test('the first speaker may pass or call any suit', () => {
-    const state = belot.setup(variant, 4, 42);
+    const state = belot.setup(variant, 4, seedOf(42));
     const speaker = rightOf(belot.view(state, 0).dealer);
     expect(belot.legalMoves(state, speaker)).toEqual([
       { type: 'pass' },
@@ -70,7 +81,7 @@ describe('calling', () => {
   });
 
   test('the dealer must call after three passes', () => {
-    let state = belot.setup(variant, 4, 7);
+    let state = belot.setup(variant, 4, seedOf(7));
     const dealer = belot.view(state, 0).dealer;
     for (let i = 1; i <= 3; i++) {
       state = play(state, ((dealer + i) % 4) as Seat, { type: 'pass' });
@@ -85,7 +96,7 @@ describe('calling', () => {
   });
 
   test('after a call every seat holds eight cards and trump and caller are set', () => {
-    let state = belot.setup(variant, 4, 42);
+    let state = belot.setup(variant, 4, seedOf(42));
     const first = rightOf(belot.view(state, 0).dealer);
     const second = rightOf(first);
     state = play(state, first, { type: 'pass' });
@@ -109,7 +120,7 @@ describe('calling', () => {
   });
 
   test('apply rejects out-of-turn and illegal moves', () => {
-    let state = belot.setup(variant, 4, 42);
+    let state = belot.setup(variant, 4, seedOf(42));
     const speaker = rightOf(belot.view(state, 0).dealer);
     expect(belot.apply(state, rightOf(speaker), { type: 'pass' }).ok).toBe(
       false,
@@ -126,7 +137,7 @@ describe('calling', () => {
 
 describe('view', () => {
   test('shows a seat its own hand and other seats only as card counts', () => {
-    const state = belot.setup(variant, 4, 42);
+    const state = belot.setup(variant, 4, seedOf(42));
     const hands = seats.map((seat) => belot.view(state, seat).hand);
     for (const seat of seats) {
       const view = belot.view(state, seat);
@@ -144,7 +155,7 @@ const turnOf = (state: BelotState) =>
   seats.find((seat) => belot.legalMoves(state, seat).length > 0)!;
 
 const called = (seed: number) => {
-  const state = belot.setup(variant, 4, seed);
+  const state = belot.setup(variant, 4, seedOf(seed));
   const speaker = rightOf(belot.view(state, 0).dealer);
   const suit = (['clubs', 'diamonds', 'hearts', 'spades'] as const)[seed % 4]!;
   return play(state, speaker, { type: 'call', suit });
@@ -917,10 +928,10 @@ describe('declarations and the contract', () => {
 });
 
 describe('full sequence', () => {
-  // Seed 372322 deals all eight spades to seat 3.
-  const seed = 372322;
+  // Seed 6753165 deals all eight spades to seat 3.
+  const seed = 6753165;
   const calling = (suit: Suit) => {
-    const state = belot.setup(variant, 4, seed);
+    const state = belot.setup(variant, 4, seedOf(seed));
     const speaker = rightOf(belot.view(state, 0).dealer);
     return play(state, speaker, { type: 'call', suit });
   };
@@ -969,7 +980,7 @@ type Logged = { seat: Seat; move: BelotMove };
 
 // Plays a whole match with varied legal moves, from calling to the match end.
 const playMatch = (seed: number, targetScore: 501 | 701 | 1001) => {
-  let state = belot.setup({ targetScore }, 4, seed);
+  let state = belot.setup({ targetScore }, 4, seedOf(seed));
   const moves: Logged[] = [];
   const events: BelotEvent[] = [];
   const results: unknown[] = [];
@@ -1065,7 +1076,13 @@ describe('match', () => {
 describe('replay', () => {
   test('replaying seed, variant, and moves gives the live state and events', () => {
     const live = playMatch(42, 701);
-    const replayed = replay(belot, { targetScore: 701 }, 4, 42, live.moves);
+    const replayed = replay(
+      belot,
+      { targetScore: 701 },
+      4,
+      seedOf(42),
+      live.moves,
+    );
     expect(replayed).toEqual({
       ok: true,
       state: live.state,
@@ -1077,6 +1094,18 @@ describe('replay', () => {
     const live = playMatch(42, 701);
     const moves = [...live.moves];
     moves[5] = moves[4]!;
-    expect(replay(belot, { targetScore: 701 }, 4, 42, moves).ok).toBe(false);
+    expect(replay(belot, { targetScore: 701 }, 4, seedOf(42), moves).ok).toBe(
+      false,
+    );
+  });
+});
+
+describe('next deal', () => {
+  test('a later deal does not repeat the first deal of a nearby seed', () => {
+    const second = playDeal(1, varied(1)).state;
+    for (let seed = 0; seed < 4; seed++) {
+      const first = belot.setup(variant, 4, seedOf(seed));
+      expect(handsOf(second)).not.toEqual(handsOf(first));
+    }
   });
 });

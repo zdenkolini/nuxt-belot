@@ -4,7 +4,7 @@ export type Applied<State, Event> =
   { ok: true; state: State; events: Event[] } | { ok: false; reason: string };
 
 export type Ruleset<Variant, State, Move, Event, View, Result> = {
-  setup: (variant: Variant, seats: number, seed: number) => State;
+  setup: (variant: Variant, seats: number, seed: string) => State;
   legalMoves: (state: State, seat: Seat) => Move[];
   apply: (state: State, seat: Seat, move: Move) => Applied<State, Event>;
   view: (state: State, seat: Seat) => View;
@@ -19,7 +19,7 @@ export const replay = <Variant, State, Move, Event>(
   ruleset: Ruleset<Variant, State, Move, Event, unknown, unknown>,
   variant: Variant,
   seats: number,
-  seed: number,
+  seed: string,
   moves: Logged<Move>[],
 ): Applied<State, Event> => {
   let state = ruleset.setup(variant, seats, seed);
