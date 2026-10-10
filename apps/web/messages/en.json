@@ -1,0 +1,8 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "app_title": "Belot",
+  "server_health": "Server health",
+  "health_checking": "Checking…",
+  "health_ok": "The server is up.",
+  "health_down": "The server does not respond."
+}
