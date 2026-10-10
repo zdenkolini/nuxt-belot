@@ -4,6 +4,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { usernameIn } from '#lib/players.js';
 
 	type RoomSocket = ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']>;
 
@@ -35,8 +36,7 @@
 		});
 	});
 
-	const usernameOf = (userId: string) =>
-		members.find((member) => member.id === userId)?.username ?? m.former_player();
+	const usernameOf = (userId: string) => usernameIn(members, userId);
 
 	const submit = (event: SubmitEvent) => {
 		event.preventDefault();

@@ -4,6 +4,7 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { usernameIn } from '#lib/players.js';
 
 	let {
 		match,
@@ -18,12 +19,7 @@
 	let confirming = $state(false);
 
 	const missing = $derived(
-		match.missing
-			.map(
-				(userId) =>
-					match.players.find((player) => player.id === userId)?.username ?? m.former_player(),
-			)
-			.join(', '),
+		match.missing.map((userId) => usernameIn(match.players, userId)).join(', '),
 	);
 
 	const end = () => {

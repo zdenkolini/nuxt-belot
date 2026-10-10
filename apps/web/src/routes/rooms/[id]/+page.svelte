@@ -13,6 +13,7 @@
 	import MatchScreen from '#lib/components/match/match-screen.svelte';
 	import MatchPause from '#lib/components/match-pause.svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import { usernameIn } from '#lib/players.js';
 
 	const id = $derived(page.params.id!);
 	const me = createQuery(() => meQuery);
@@ -82,8 +83,7 @@
 
 	const isOwner = $derived(!!room && room.ownerId === me.data?.id);
 	const mySeat = $derived(room && me.data ? room.seats.indexOf(me.data.id) : -1);
-	const usernameOf = (userId: string) =>
-		room?.members.find((member) => member.id === userId)?.username ?? '';
+	const usernameOf = (userId: string) => usernameIn(room!.members, userId);
 
 	// Room changes come back over the socket; only failures need handling here.
 	const act = async (
