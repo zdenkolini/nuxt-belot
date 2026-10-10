@@ -93,3 +93,4 @@ sw.*
 .yarn/
 .svelte-kit/
 apps/web/build/
+.claude/worktrees/
