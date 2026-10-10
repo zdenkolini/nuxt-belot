@@ -11,6 +11,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import MatchTable from '#lib/components/table/match-table.svelte';
+	import MatchPause from '#lib/components/match-pause.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
 	const targetScores: TargetScore[] = [501, 701, 1001];
@@ -27,6 +28,7 @@
 	let lastTrick = $state<{ plays: Play[]; winner: Seat } | null>(null);
 	let dealScore = $state<DealScore | null>(null);
 	let sendMove: ((move: BelotMove) => void) | undefined;
+	let endMatch: (() => void) | undefined;
 
 	const onMatch = (next: MatchView) => {
 		if (match?.result && !next.result) {
@@ -66,10 +68,12 @@
 				const message = data as RoomMessage;
 				if (message.type === 'room') room = message.room;
 				else if (message.type === 'match') onMatch(message.match);
-				else if (message.type === 'match.rejected') notice = m.move_rejected();
+				else if (message.type === 'match.rejected')
+					notice = message.reason === 'paused' ? m.match_paused() : m.move_rejected();
 				else if (message.type === 'removed') closedReason = m.removed_from_room;
 			});
 			sendMove = (move) => ws?.send({ type: 'match.move', move });
+			endMatch = () => ws?.send({ type: 'match.end' });
 		})();
 		return () => {
 			stopped = true;
@@ -146,6 +150,7 @@
 			{/if}
 		{/snippet}
 	</MatchTable>
+	<MatchPause {match} {room} onend={() => endMatch?.()} onback={backToRoom} />
 	{#if notice}
 		<p class="fixed inset-x-0 top-2 z-20 mx-auto w-fit rounded-md bg-foreground px-3 py-1 text-sm text-background" role="status">
 			{notice}
