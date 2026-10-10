@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.0",
-    "drizzle-orm": "^0.44.0"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "catalog:",
     "drizzle-kit": "^0.31.0",
-    "typescript": "^6.0.3"
+    "typescript": "catalog:"
   }
 }
