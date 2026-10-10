@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MatchView, RoomView } from '@belot/server';
+	import type { MatchView } from '@belot/server';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
@@ -7,12 +7,10 @@
 
 	let {
 		match,
-		room,
 		onend,
 		onback,
 	}: {
 		match: MatchView;
-		room: RoomView;
 		onend: () => void;
 		onback: () => void;
 	} = $props();
@@ -23,7 +21,7 @@
 		match.missing
 			.map(
 				(userId) =>
-					room.members.find((member) => member.id === userId)?.username ?? m.former_player(),
+					match.players.find((player) => player.id === userId)?.username ?? m.former_player(),
 			)
 			.join(', '),
 	);

@@ -150,7 +150,7 @@
 			{/if}
 		{/snippet}
 	</MatchTable>
-	<MatchPause {match} {room} onend={() => endMatch?.()} onback={backToRoom} />
+	<MatchPause {match} onend={() => endMatch?.()} onback={backToRoom} />
 	{#if notice}
 		<p class="fixed inset-x-0 top-2 z-20 mx-auto w-fit rounded-md bg-foreground px-3 py-1 text-sm text-background" role="status">
 			{notice}

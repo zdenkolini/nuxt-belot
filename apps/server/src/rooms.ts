@@ -208,6 +208,9 @@ export const roomRoutes = async (db: Db, session: Session) => {
           if (room.removed.includes(userId))
             return fail(403, 'removed_from_room');
           if (!room.members.includes(userId)) room.members.push(userId);
+          // A player who left mid-match takes their seat back.
+          const seat = play.seatOf(room.id, userId);
+          if (seat !== undefined) room.seats[seat] = userId;
         }))!,
       { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
     )
@@ -337,7 +340,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           sockets.set(params.id, roomSockets.set(ws.id, socket));
           socket.send({ type: 'room', room: await view(room) });
           // A seated player coming back may end the pause for everyone.
-          if (play.isSeated(params.id, userId)) {
+          if (play.seatOf(params.id, userId) !== undefined) {
             sendEach(params.id, play.viewsOf(params.id));
           } else {
             const match = play.viewFor(params.id, userId);
@@ -379,7 +382,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         opening.delete(ws.id);
         sockets.get(params.id)?.delete(ws.id);
         // A seated player gone pauses the match for everyone.
-        if (play.isSeated(params.id, userId)) {
+        if (play.seatOf(params.id, userId) !== undefined) {
           sendEach(params.id, play.viewsOf(params.id));
         }
       },

@@ -1,4 +1,4 @@
-import { matches as matchesTable, moves, type Db } from '@belot/db';
+import { matches as matchesTable, moves, user, type Db } from '@belot/db';
 import {
   belot,
   replay,
@@ -11,14 +11,15 @@ import {
   type Logged,
   type Seat,
 } from '@belot/engine';
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 
-// What one seat sees of the match. `events` are those of the last move.
-// `missing` holds the user ids of seated players who are not connected; the
+// What one seat sees of the match. `players` are by seat, also those who
+// left the room. `events` are those of the last move. `missing` holds the user ids of seated players who are not connected; the
 // match is paused while it is not empty. `ended` is true when the players
 // ended a paused match.
 export type MatchView = {
   seat: Seat;
+  players: { id: string; username: string | null }[];
   view: BelotView;
   legalMoves: BelotMove[];
   turn: Seat | null;
@@ -52,6 +53,8 @@ type LiveMatch = {
   variant: BelotVariant;
   seed: string;
   seats: string[];
+  // Kept from the start, so players who leave the room keep their name.
+  usernames: (string | null)[];
   log: Logged<BelotMove>[];
   state: BelotState;
 };
@@ -69,6 +72,14 @@ export const createPlay = async (
   connected: (roomId: string) => Set<string>,
 ) => {
   const matches = new Map<string, LiveMatch>();
+
+  const usernamesOf = async (ids: string[]) => {
+    const names = await db
+      .select({ id: user.id, username: user.username })
+      .from(user)
+      .where(inArray(user.id, ids));
+    return ids.map((id) => names.find((n) => n.id === id)?.username ?? null);
+  };
 
   const running = await db
     .select()
@@ -91,6 +102,7 @@ export const createPlay = async (
       variant,
       seed: saved.seed,
       seats: saved.seats,
+      usernames: await usernamesOf(saved.seats),
       log,
       state: rebuilt.state,
     });
@@ -114,6 +126,10 @@ export const createPlay = async (
     const legalMoves = match.ended ? [] : belot.legalMoves(match.state, seat);
     return {
       seat,
+      players: match.seats.map((id, i) => ({
+        id,
+        username: match.usernames[i]!,
+      })),
       view: belot.view(match.state, seat),
       legalMoves,
       turn: match.ended
@@ -169,6 +185,7 @@ export const createPlay = async (
         variant,
         seed,
         seats: seatedUsers,
+        usernames: await usernamesOf(seatedUsers),
         log: [],
         state: belot.setup(variant, 4, seed),
       };
@@ -249,10 +266,11 @@ export const createPlay = async (
       return match && views(roomId, match, []).get(userId);
     },
 
-    // True when the user has a seat in the room's unfinished match.
-    isSeated: (roomId: string, userId: string) => {
+    // The user's seat in the room's unfinished match, if they have one.
+    seatOf: (roomId: string, userId: string) => {
       const match = matches.get(roomId);
-      return !!match && !isOver(match) && match.seats.includes(userId);
+      const seat = match && !isOver(match) ? match.seats.indexOf(userId) : -1;
+      return seat < 0 ? undefined : seat;
     },
   };
 };
