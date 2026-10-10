@@ -7,6 +7,7 @@ import { roomRoutes } from './rooms';
 import { createSession } from './session';
 
 export type { Email } from './auth';
+export type { ChatIntent, ChatMessage } from './chat';
 export type { PublicRoom, RoomMessage, RoomView, TargetScore } from './rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;

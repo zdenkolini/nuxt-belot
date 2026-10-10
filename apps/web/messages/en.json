@@ -57,5 +57,13 @@
   "seat_taken": "Another player took this seat.",
   "room_action_failed": "That did not work. Try again.",
   "back_home": "Back to rooms",
-  "connecting": "Connecting…"
+  "connecting": "Connecting…",
+  "chat": "Chat",
+  "chat_message": "Message",
+  "send_message": "Send",
+  "no_chat_messages": "No messages yet.",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "muted_player": "{username} is muted",
+  "former_player": "Former player"
 }

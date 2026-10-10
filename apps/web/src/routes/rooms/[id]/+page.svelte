@@ -6,6 +6,7 @@
 	import type { RoomMessage, RoomView, TargetScore } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
+	import RoomChat from '#lib/components/room-chat.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -18,6 +19,7 @@
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
 	let notice = $state<string | null>(null);
+	let socket = $state<ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']> | null>(null);
 
 	$effect(() => {
 		const roomId = id;
@@ -32,10 +34,11 @@
 			}
 			room = data;
 			ws = api.rooms({ id: roomId }).ws.subscribe();
+			socket = ws;
 			ws.subscribe(({ data }) => {
 				const message = data as RoomMessage;
 				if (message.type === 'room') room = message.room;
-				else closedReason = m.removed_from_room;
+				else if (message.type === 'removed') closedReason = m.removed_from_room;
 			});
 		})();
 		return () => {
@@ -163,6 +166,10 @@
 						{/each}
 					</ul>
 				</section>
+
+				{#if socket}
+					<RoomChat {socket} members={room.members} myId={me.data?.id} />
+				{/if}
 
 				{#if notice}
 					<p class="text-sm" role="status">{notice}</p>
