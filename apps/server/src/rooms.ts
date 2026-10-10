@@ -1,6 +1,7 @@
 import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
+import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
 import { createPlay, type MatchIntent, type MatchMessage } from './play';
 import type { Session } from './session';
 
@@ -27,7 +28,10 @@ export type PublicRoom = {
 
 // Everything the server sends over the room socket.
 export type RoomMessage =
-  { type: 'room'; room: RoomView } | { type: 'removed' } | MatchMessage;
+  | { type: 'room'; room: RoomView }
+  | { type: 'removed' }
+  | MatchMessage
+  | ChatServerMessage;
 
 type Socket = {
   userId: string;
@@ -54,6 +58,7 @@ const nextOwner = (room: Room) => {
 export const roomRoutes = (db: Db, session: Session) => {
   // Open room sockets by room id, then by connection id.
   const sockets = new Map<string, Map<string, Socket>>();
+  const chat = createChat();
   const play = createPlay();
 
   // Sends each user their own message, if they have one.
@@ -125,7 +130,10 @@ export const roomRoutes = (db: Db, session: Session) => {
       await tx.update(rooms).set(room).where(eq(rooms.id, id));
       return { room };
     });
-    if (!result) return null;
+    if (!result) {
+      chat.forget(id);
+      return null;
+    }
     if ('failure' in result) return result.failure;
     const roomView = await view(result.room);
     broadcast(roomView);
@@ -322,18 +330,26 @@ export const roomRoutes = (db: Db, session: Session) => {
         const match = play.viewFor(params.id, userId);
         if (match) socket.send(match);
       },
-      message(ws, intent: Partial<MatchIntent>) {
-        const { userId, params } = ws.data;
-        if (intent?.type !== 'match:move') return;
-        const moved = play.move(params.id, userId, intent.move ?? {});
-        if (moved.ok) sendEach(params.id, moved.views);
-        else
-          ws.send(
-            JSON.stringify({
-              type: 'match:rejected',
-              reason: moved.reason,
-            } satisfies RoomMessage),
+      message(ws, body) {
+        const intent = (
+          typeof body === 'string' ? JSON.parse(body) : body
+        ) as Partial<ChatIntent | MatchIntent> | null;
+        const roomSockets = sockets.get(ws.data.params.id);
+        const socket = roomSockets?.get(ws.id);
+        if (!roomSockets || !socket) return;
+        if (intent?.type === 'match.move') {
+          const moved = play.move(
+            ws.data.params.id,
+            socket.userId,
+            intent.move ?? {},
           );
+          if (moved.ok) sendEach(ws.data.params.id, moved.views);
+          else socket.send({ type: 'match.rejected', reason: moved.reason });
+        } else if (intent?.type?.startsWith('chat.')) {
+          chat.handle(ws.data.params.id, socket, intent as ChatIntent, [
+            ...roomSockets.values(),
+          ]);
+        }
       },
       close(ws) {
         sockets.get(ws.data.params.id)?.delete(ws.id);

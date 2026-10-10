@@ -381,13 +381,18 @@ const playCard = (
       state.scores[1] + score.points[1],
     ];
     const { targetScore } = state.variant;
-    if (scores[0] >= targetScore || scores[1] >= targetScore) {
+    if (
+      score.winsMatch !== null ||
+      scores[0] >= targetScore ||
+      scores[1] >= targetScore
+    ) {
       const winner: Team =
-        scores[0] === scores[1]
+        score.winsMatch ??
+        (scores[0] === scores[1]
           ? teamOf(deal.caller!)
           : scores[0] > scores[1]
             ? 0
-            : 1;
+            : 1);
       const result = { winner, scores };
       events.push({ type: 'matchEnded', result });
       return {

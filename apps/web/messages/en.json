@@ -99,5 +99,13 @@
   "back_to_room": "Back to room",
   "wait_for_owner": "The room owner can start a new match.",
   "move_rejected": "That move is not allowed now.",
-  "match_running": "A match is running. Seats stay fixed until it ends."
+  "match_running": "A match is running. Seats stay fixed until it ends.",
+  "chat": "Chat",
+  "chat_message": "Message",
+  "send_message": "Send",
+  "no_chat_messages": "No messages yet.",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "muted_player": "{username} is muted",
+  "former_player": "Former player"
 }

@@ -7,6 +7,7 @@ import { roomRoutes } from './rooms';
 import { createSession } from './session';
 
 export type { Email } from './auth';
+export type { ChatIntent, ChatMessage } from './chat';
 export type { MatchIntent, MatchView, MoveRejection } from './play';
 export type { PublicRoom, RoomMessage, RoomView, TargetScore } from './rooms';
 
@@ -14,7 +15,8 @@ const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 
 // Drizzle wraps the driver error; Postgres code 23505 is a unique violation.
 const isUniqueViolation = (e: unknown) =>
-  e instanceof Error && (e.cause as { code?: string } | undefined)?.code === '23505';
+  e instanceof Error &&
+  (e.cause as { code?: string } | undefined)?.code === '23505';
 
 export const createApp = (options: AuthOptions) => {
   const { db } = options;
@@ -42,7 +44,10 @@ export const createApp = (options: AuthOptions) => {
       '/me/username',
       async ({ userId, body: { username }, status }) => {
         const [me] = await db
-          .select({ username: user.username, changedAt: user.usernameChangedAt })
+          .select({
+            username: user.username,
+            changedAt: user.usernameChangedAt,
+          })
           .from(user)
           .where(eq(user.id, userId));
         // The first pick is free; after that one change per 30 days.
@@ -57,7 +62,10 @@ export const createApp = (options: AuthOptions) => {
         try {
           await db
             .update(user)
-            .set({ username, ...(isChange && { usernameChangedAt: new Date() }) })
+            .set({
+              username,
+              ...(isChange && { usernameChangedAt: new Date() }),
+            })
             .where(eq(user.id, userId));
         } catch (e) {
           if (isUniqueViolation(e)) {

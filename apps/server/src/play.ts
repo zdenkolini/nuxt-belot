@@ -22,9 +22,9 @@ export type MatchView = {
 
 export type MatchMessage =
   | { type: 'match'; match: MatchView }
-  | { type: 'match:rejected'; reason: MoveRejection };
+  | { type: 'match.rejected'; reason: MoveRejection };
 
-export type MatchIntent = { type: 'match:move'; move: BelotMove };
+export type MatchIntent = { type: 'match.move'; move: BelotMove };
 
 type Untrusted = { type: unknown; suit: unknown; card?: { id?: unknown } };
 

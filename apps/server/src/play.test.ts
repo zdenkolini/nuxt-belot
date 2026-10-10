@@ -58,7 +58,7 @@ test('starting a match sends each seat its own view and nothing of the seed', as
 });
 
 const send = (socket: Socket, move: unknown) =>
-  socket.ws.send(JSON.stringify({ type: 'match:move', move }));
+  socket.ws.send(JSON.stringify({ type: 'match.move', move }));
 
 test('the server rejects moves out of turn and illegal moves, and applies legal ones', async () => {
   const { room, players, sockets } = await table();
@@ -68,14 +68,14 @@ test('the server rejects moves out of turn and illegal moves, and applies legal 
   const waiting = (turn + 1) % 4;
 
   send(sockets[waiting]!, { type: 'pass' });
-  expect(await nextOf(sockets[waiting]!, 'match:rejected')).toEqual({
-    type: 'match:rejected',
+  expect(await nextOf(sockets[waiting]!, 'match.rejected')).toEqual({
+    type: 'match.rejected',
     reason: 'not_your_turn',
   });
 
   send(sockets[turn]!, { type: 'play', card: views[turn]!.match.view.hand[0] });
-  expect(await nextOf(sockets[turn]!, 'match:rejected')).toEqual({
-    type: 'match:rejected',
+  expect(await nextOf(sockets[turn]!, 'match.rejected')).toEqual({
+    type: 'match.rejected',
     reason: 'illegal_move',
   });
 
@@ -94,10 +94,10 @@ test('the server rejects moves out of turn and illegal moves, and applies legal 
   const leader = called[0]!.turn!;
   send(sockets[leader]!, { type: 'play' });
   send(sockets[leader]!, { type: 'play', card: { id: 'joker' } });
-  expect(await nextOf(sockets[leader]!, 'match:rejected')).toMatchObject({
+  expect(await nextOf(sockets[leader]!, 'match.rejected')).toMatchObject({
     reason: 'illegal_move',
   });
-  expect(await nextOf(sockets[leader]!, 'match:rejected')).toMatchObject({
+  expect(await nextOf(sockets[leader]!, 'match.rejected')).toMatchObject({
     reason: 'illegal_move',
   });
   const move = called[leader]!.legalMoves[0] as PlayMove;

@@ -931,6 +931,21 @@ describe('full sequence', () => {
     expect(score.winsMatch).toBe(1);
   });
 
+  test('eight trumps end the match below the target score', () => {
+    const { score, state, events } = playDeal(
+      seed,
+      varied(seed),
+      calling('spades'),
+    );
+    const result = { winner: 1 as const, scores: score.points };
+    expect(score.points[0]! < 501 && score.points[1]! < 501).toBe(true);
+    expect(events.at(-1)).toEqual({ type: 'matchEnded', result });
+    expect(belot.result(state)).toEqual(result);
+    expect(seats.every((s) => belot.legalMoves(state, s).length === 0)).toBe(
+      true,
+    );
+  });
+
   test('no full sequence wins no match', () => {
     const { score } = playDeal(42, varied(42));
     expect(score.winsMatch).toBe(null);

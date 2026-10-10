@@ -7,6 +7,7 @@
 	import type { MatchView, RoomMessage, RoomView, TargetScore } from '@belot/server';
 	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
+	import RoomChat from '#lib/components/room-chat.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import MatchTable from '#lib/components/table/match-table.svelte';
@@ -20,6 +21,7 @@
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
 	let notice = $state<string | null>(null);
+	let socket = $state<ReturnType<ReturnType<typeof api.rooms>['ws']['subscribe']> | null>(null);
 	// Replaced wholesale by each match view the server sends.
 	let match = $state<MatchView | null>(null);
 	let lastTrick = $state<{ plays: Play[]; winner: Seat } | null>(null);
@@ -59,14 +61,15 @@
 			}
 			room = data;
 			ws = api.rooms({ id: roomId }).ws.subscribe();
+			socket = ws;
 			ws.subscribe(({ data }) => {
 				const message = data as RoomMessage;
 				if (message.type === 'room') room = message.room;
 				else if (message.type === 'match') onMatch(message.match);
-				else if (message.type === 'match:rejected') notice = m.move_rejected();
+				else if (message.type === 'match.rejected') notice = m.move_rejected();
 				else if (message.type === 'removed') closedReason = m.removed_from_room;
 			});
-			sendMove = (move) => ws?.send({ type: 'match:move', move });
+			sendMove = (move) => ws?.send({ type: 'match.move', move });
 		})();
 		return () => {
 			stopped = true;
@@ -136,7 +139,13 @@
 		ondismissscore={() => (dealScore = null)}
 		onplayagain={start}
 		onback={backToRoom}
-	/>
+	>
+		{#snippet chat()}
+			{#if socket}
+				<RoomChat {socket} members={room!.members} myId={me.data?.id} />
+			{/if}
+		{/snippet}
+	</MatchTable>
 	{#if notice}
 		<p class="fixed inset-x-0 top-2 z-20 mx-auto w-fit rounded-md bg-foreground px-3 py-1 text-sm text-background" role="status">
 			{notice}
@@ -227,6 +236,10 @@
 						{/each}
 					</ul>
 				</section>
+
+				{#if socket}
+					<RoomChat {socket} members={room.members} myId={me.data?.id} />
+				{/if}
 
 				{#if notice}
 					<p class="text-sm" role="status">{notice}</p>

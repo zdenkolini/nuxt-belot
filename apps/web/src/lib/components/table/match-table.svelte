@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import type { BelotMove, DealScore, Play, Seat, Team } from '@belot/engine';
 	import type { MatchView, RoomView } from '@belot/server';
@@ -19,6 +20,7 @@
 		ondismissscore,
 		onplayagain,
 		onback,
+		chat,
 	}: {
 		match: MatchView;
 		room: RoomView;
@@ -29,6 +31,7 @@
 		ondismissscore: () => void;
 		onplayagain: () => void;
 		onback: () => void;
+		chat?: Snippet;
 	} = $props();
 
 	const view = $derived(match.view);
@@ -103,6 +106,12 @@
 				<h2 class="font-medium">{m.deal_score()}</h2>
 				<DealScoreTable score={dealScore} {myTeam} />
 			</section>
+		{/if}
+		{#if chat}
+			<details class="w-full">
+				<summary class="cursor-pointer font-medium">{m.chat()}</summary>
+				<div class="pt-2">{@render chat()}</div>
+			</details>
 		{/if}
 	</aside>
 
