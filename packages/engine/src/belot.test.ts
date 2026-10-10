@@ -797,6 +797,19 @@ describe('declaration comparison', () => {
     expect(score.declarations[1 - winner]).toBe(0);
     expect(sumOf(1 - winner)).toBeGreaterThan(0);
   });
+
+  test('every seat sees which team scores its declarations once they are announced', () => {
+    const { start, score } = findContest(0);
+    for (const seat of seats) {
+      expect(belot.view(start, seat).declarationPoints).toEqual([0, 0]);
+    }
+    const { state } = playFirstTrick(start);
+    for (const seat of seats) {
+      expect(belot.view(state, seat).declarationPoints).toEqual(
+        score.declarations,
+      );
+    }
+  });
 });
 
 const holdsBelote = (hand: Card[], trump: Suit) =>
