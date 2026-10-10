@@ -1,0 +1,228 @@
+import { expect, test } from 'bun:test';
+import { setup } from './test-setup';
+
+// Ana creates a room; the other players open its invite link.
+const roomWith = async (...others: string[]) => {
+  const ctx = await setup();
+  const ana = await ctx.player('ana');
+  const { data: room } = await ctx.api.rooms.post({}, ana);
+  const players = [ana];
+  for (const name of others) {
+    const p = await ctx.player(name);
+    await ctx.api.rooms({ id: room!.id }).join.post({}, p);
+    players.push(p);
+  }
+  return { ...ctx, roomId: room!.id, players };
+};
+
+test('the creator of a room is its room owner and gets the room over the socket', async () => {
+  const { api, player, connect } = await setup();
+  const ana = await player('ana');
+
+  const { data: room, status } = await api.rooms.post({}, ana);
+  expect(status).toBe(200);
+  expect(room).toMatchObject({
+    ownerId: ana.id,
+    isPublic: false,
+    targetScore: 1001,
+    members: [{ id: ana.id, username: 'ana' }],
+    seats: [null, null, null, null],
+  });
+
+  const socket = await connect(room!.id, ana);
+  expect(await socket.next()).toEqual({ type: 'room', room: room! });
+});
+
+test('rooms need a session', async () => {
+  const { api } = await setup();
+  expect((await api.rooms.post({})).status).toBe(401);
+  expect((await api.rooms.get()).status).toBe(401);
+});
+
+test('opening the invite link puts a player in the room, live for everyone', async () => {
+  const { api, player, connect } = await setup();
+  const ana = await player('ana');
+  const bob = await player('bob');
+  const { data: room } = await api.rooms.post({}, ana);
+  const anaSocket = await connect(room!.id, ana);
+  await anaSocket.next();
+
+  const { data, status } = await api.rooms({ id: room!.id }).join.post({}, bob);
+  expect(status).toBe(200);
+  const members = [
+    { id: ana.id, username: 'ana' },
+    { id: bob.id, username: 'bob' },
+  ];
+  expect(data?.members).toEqual(members);
+  expect(await anaSocket.next()).toMatchObject({
+    type: 'room',
+    room: { members },
+  });
+});
+
+test('only members can open the room socket', async () => {
+  const { roomId, player, connect } = await roomWith();
+  const eve = await player('eve');
+
+  const socket = await connect(roomId, eve);
+  expect(await socket.next()).toBeUndefined();
+  expect(socket.isClosed()).toBe(true);
+});
+
+test('a private room is not listed; a public room is listed with its free seats', async () => {
+  const { api, roomId, players } = await roomWith('bob');
+  const [ana, bob] = players;
+  expect((await api.rooms.get(bob)).data).toEqual([]);
+
+  await api.rooms({ id: roomId }).patch({ isPublic: true }, ana);
+  await api.rooms({ id: roomId }).seat.put({ seat: 0 }, ana);
+  const { data } = await api.rooms.get(bob);
+  expect(data).toEqual([
+    { id: roomId, owner: 'ana', targetScore: 1001, freeSeats: 3 },
+  ]);
+});
+
+test('players pick, move to, and leave seats, and everyone sees it live', async () => {
+  const { api, roomId, players, connect } = await roomWith('bob');
+  const [ana, bob] = players;
+  const room = api.rooms({ id: roomId });
+  const bobSocket = await connect(roomId, bob!);
+  await bobSocket.next();
+
+  await room.seat.put({ seat: 0 }, ana);
+  expect(await bobSocket.next()).toMatchObject({
+    room: { seats: [ana!.id, null, null, null] },
+  });
+
+  const taken = await room.seat.put({ seat: 0 }, bob);
+  expect(taken.status).toBe(409);
+  expect(taken.error?.value).toEqual({ error: 'seat_taken' });
+
+  await room.seat.put({ seat: 3 }, ana);
+  expect(await bobSocket.next()).toMatchObject({
+    room: { seats: [null, null, null, ana!.id] },
+  });
+
+  await room.seat.delete({}, ana);
+  expect(await bobSocket.next()).toMatchObject({
+    room: { seats: [null, null, null, null] },
+  });
+});
+
+test('only members can take a seat', async () => {
+  const { api, roomId, player } = await roomWith();
+  const eve = await player('eve');
+  const { status } = await api.rooms({ id: roomId }).seat.put({ seat: 0 }, eve);
+  expect(status).toBe(403);
+});
+
+test('the room owner sets the target score; other players cannot', async () => {
+  const { api, roomId, players, connect } = await roomWith('bob');
+  const [ana, bob] = players;
+  const room = api.rooms({ id: roomId });
+  const bobSocket = await connect(roomId, bob!);
+  await bobSocket.next();
+
+  const denied = await room.patch({ targetScore: 501 }, bob);
+  expect(denied.status).toBe(403);
+  expect(denied.error?.value).toEqual({ error: 'not_the_owner' });
+
+  expect((await room.patch({ targetScore: 701 }, ana)).status).toBe(200);
+  expect(await bobSocket.next()).toMatchObject({ room: { targetScore: 701 } });
+});
+
+test('the target score is 501, 701, or 1001', async () => {
+  const { api, roomId, players } = await roomWith();
+  const { status } = await api
+    .rooms({ id: roomId })
+    .patch({ targetScore: 600 as 501 }, players[0]);
+  expect(status).toBe(422);
+});
+
+test('the room owner removes a player, who cannot come back', async () => {
+  const { api, roomId, players, connect } = await roomWith('bob', 'cara');
+  const [ana, bob, cara] = players;
+  const room = api.rooms({ id: roomId });
+  await room.seat.put({ seat: 1 }, bob);
+  const bobSocket = await connect(roomId, bob!);
+  const caraSocket = await connect(roomId, cara!);
+  await bobSocket.next();
+  await caraSocket.next();
+
+  const denied = await room.members({ memberId: bob!.id }).delete({}, cara);
+  expect(denied.status).toBe(403);
+
+  expect(
+    (await room.members({ memberId: bob!.id }).delete({}, ana)).status,
+  ).toBe(200);
+  expect(await bobSocket.next()).toEqual({ type: 'removed' });
+  expect(await bobSocket.next()).toBeUndefined();
+  expect(await caraSocket.next()).toMatchObject({
+    room: {
+      members: [
+        { id: ana!.id, username: 'ana' },
+        { id: cara!.id, username: 'cara' },
+      ],
+      seats: [null, null, null, null],
+    },
+  });
+
+  const rejoin = await room.join.post({}, bob);
+  expect(rejoin.status).toBe(403);
+  expect(rejoin.error?.value).toEqual({ error: 'removed_from_room' });
+});
+
+test('only the room owner starts, and only with four seats full', async () => {
+  const { api, roomId, players } = await roomWith('bob', 'cara', 'dan');
+  const room = api.rooms({ id: roomId });
+  for (const [seat, p] of players.slice(0, 3).entries())
+    await room.seat.put({ seat }, p);
+
+  const notFull = await room.start.post({}, players[0]);
+  expect(notFull.status).toBe(409);
+  expect(notFull.error?.value).toEqual({ error: 'seats_not_full' });
+
+  await room.seat.put({ seat: 3 }, players[3]);
+  expect((await room.start.post({}, players[1])).status).toBe(403);
+  expect((await room.start.post({}, players[0])).status).toBe(200);
+});
+
+test('when the room owner leaves, the next seated player becomes owner', async () => {
+  const { api, roomId, players, connect } = await roomWith('bob', 'cara');
+  const [ana, bob, cara] = players;
+  const room = api.rooms({ id: roomId });
+  await room.seat.put({ seat: 1 }, ana);
+  await room.seat.put({ seat: 0 }, cara);
+  await room.seat.put({ seat: 3 }, bob);
+  const anaSocket = await connect(roomId, ana!);
+  const caraSocket = await connect(roomId, cara!);
+  await anaSocket.next();
+  await caraSocket.next();
+
+  expect((await room.leave.post({}, ana)).status).toBe(200);
+  expect(await anaSocket.next()).toBeUndefined();
+  expect(await caraSocket.next()).toMatchObject({
+    room: { ownerId: bob!.id, seats: [cara!.id, null, null, bob!.id] },
+  });
+  expect((await room.patch({ targetScore: 501 }, bob)).status).toBe(200);
+});
+
+test('a player leaves a seat and stays in the room', async () => {
+  const { api, roomId, players } = await roomWith('bob');
+  const [, bob] = players;
+  const room = api.rooms({ id: roomId });
+  await room.seat.put({ seat: 2 }, bob);
+
+  const { data } = await room.seat.delete({}, bob);
+  expect(data?.seats).toEqual([null, null, null, null]);
+  expect(data?.members.map((m) => m.username)).toEqual(['ana', 'bob']);
+});
+
+test('a room is gone once its last player leaves', async () => {
+  const { api, roomId, players, player } = await roomWith();
+  await api.rooms({ id: roomId }).leave.post({}, players[0]);
+
+  const bob = await player('bob');
+  const { status } = await api.rooms({ id: roomId }).join.post({}, bob);
+  expect(status).toBe(404);
+});

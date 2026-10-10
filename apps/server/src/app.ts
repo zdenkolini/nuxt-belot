@@ -3,8 +3,12 @@ import { user } from '@belot/db';
 import { eq } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
 import { createAuth, type AuthOptions } from './auth';
+import { roomRoutes } from './rooms';
+import { createSession } from './session';
 
 export type { Email } from './auth';
+export type { PublicRoom, RoomMessage, RoomView, TargetScore } from './rooms';
+export { targetScores } from './rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 
@@ -15,25 +19,19 @@ const isUniqueViolation = (e: unknown) =>
 export const createApp = (options: AuthOptions) => {
   const { db } = options;
   const auth = createAuth(options);
+  const session = createSession(auth);
 
   return new Elysia()
     .use(cors({ origin: options.webURL, credentials: true }))
     .mount(auth.handler)
-    .macro({
-      auth: {
-        async resolve({ status, request: { headers } }) {
-          const session = await auth.api.getSession({ headers });
-          if (!session) return status(401);
-          return { userId: session.user.id };
-        },
-      },
-    })
+    .use(session)
+    .use(roomRoutes(db, session))
     .get('/health', () => ({ status: 'ok' as const }))
     .get(
       '/me',
       async ({ userId }) => {
         const [me] = await db
-          .select({ email: user.email, username: user.username })
+          .select({ id: user.id, email: user.email, username: user.username })
           .from(user)
           .where(eq(user.id, userId));
         return me!;

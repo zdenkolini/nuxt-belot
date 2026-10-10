@@ -15,6 +15,13 @@
       "when": 1791643834877,
       "tag": "0001_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791644340139,
+      "tag": "0002_rooms",
+      "breakpoints": true
     }
   ]
 }
