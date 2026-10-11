@@ -10,6 +10,58 @@
   "email_label": "Email",
   "send_link": "Send link",
   "link_sent": "Check your email for the sign-in link.",
+  "play_as_guest": "Play as guest",
+  "guest_sign_in_failed": "We could not start a guest account. Try again.",
+  "claim_account": "Claim your account",
+  "claim_description": "Connect an email to keep this account and its match history on any device, and to choose your own username.",
+  "claim_link_sent": "Check your email and open the link in this browser.",
+  "guest_in_room": "Leave your room before you claim your account.",
+  "guest_sign_out_warning": "You are a guest. Signing out loses this account and its match history. Claim it first to keep it.",
+  "sign_out_anyway": "Sign out anyway",
+  "claim_choice_title": "This email already has an account",
+  "claim_choice_description": "Choose which match history to keep. Matches you do not keep are not deleted.",
+  "matches_played": "Matches played",
+  "your_account": "Your account",
+  "this_guest": "This guest",
+  "name_placeholder": "your name",
+  "letter_greeting": "Dear {username},",
+  "letter_account_body": [
+    {
+      "declarations": [
+        "input email",
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "We have you down as {email}, with {count} match played at our tables.",
+        "countPlural=other": "We have you down as {email}, with {count} matches played at our tables."
+      }
+    }
+  ],
+  "letter_guest_body": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "You play as a guest. Your account lives only in this browser, with {count} match played so far.",
+        "countPlural=other": "You play as a guest. Your account lives only in this browser, with {count} matches played so far."
+      }
+    }
+  ],
+  "letter_username_body": "Before you sit down, write the name the table will call you.",
+  "letter_claim_greeting": "Welcome back,",
+  "letter_sign_off": "The house",
+  "claim_keep_short": "Keep",
+  "claim_merge_short": "Add to my account",
+  "claim_choice_failed": "We could not save your choice. Try again.",
   "sign_in_failed": "We could not send the link. Try again.",
   "username_title": "Choose your username",
   "username_description": "Other players see this name. You can change it once every 30 days.",
@@ -28,7 +80,21 @@
   "public_rooms": "Public rooms",
   "no_public_rooms": "No public rooms now. Create one and invite friends.",
   "room_of": "Room of {owner}",
-  "free_seats": "{count} free seats",
+  "free_seats": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{count} free seat",
+        "countPlural=other": "{count} free seats"
+      }
+    }
+  ],
   "target_score_value": "Target score {score}",
   "ranked_queue": "Ranked queue",
   "leaderboard": "Leaderboard",
@@ -123,6 +189,14 @@
   "end_match_title": "End this match?",
   "end_match_description": "The match ends for all players. You cannot go on with it later.",
   "keep_waiting": "Keep waiting",
+  "leave_match": "Leave match",
+  "leave_match_title": "Leave this match?",
+  "leave_match_description": "The match ends for everyone at the table, and you cannot take a seat for 20 minutes.",
+  "stay_in_match": "Stay",
+  "match_left_by": "{username} left the match",
+  "match_left_description": "The match is over. Wait in the room for a new player to take the free seat.",
+  "seat_cooldown": "You left a match, so you can take a seat again at {time}.",
+  "go_to_room": "Go to your room",
   "match_ended": "Match ended",
   "match_ended_by_players": "A player ended the match while it was paused.",
   "match_running": "A match is running. Seats stay fixed until it ends.",

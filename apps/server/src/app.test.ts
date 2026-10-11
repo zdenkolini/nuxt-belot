@@ -16,7 +16,12 @@ test('a magic link signs the player in without a username', async () => {
   expect(linkIn(sent[0]!)).toStartWith(`${baseURL}/api/auth/magic-link/verify`);
   const { data, status } = await api.me.get(session);
   expect(status).toBe(200);
-  expect(data).toEqual({ id: expect.any(String), email: 'ana@example.com', username: null });
+  expect(data).toEqual({
+    id: expect.any(String),
+    email: 'ana@example.com',
+    username: null,
+    isGuest: false,
+  });
 });
 
 test('the account is not available without a session', async () => {
@@ -32,7 +37,12 @@ test('a player picks a username', async () => {
   const { status } = await api.me.username.put({ username: 'ana' }, session);
   expect(status).toBe(200);
   const { data } = await api.me.get(session);
-  expect(data).toEqual({ id: expect.any(String), email: 'ana@example.com', username: 'ana' });
+  expect(data).toEqual({
+    id: expect.any(String),
+    email: 'ana@example.com',
+    username: 'ana',
+    isGuest: false,
+  });
 });
 
 test('a taken username is rejected, whatever its case', async () => {

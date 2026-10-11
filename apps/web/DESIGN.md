@@ -145,7 +145,7 @@ Objects lie a little askew, as if put down by hand: paper panels rotate between 
 
 The world lives behind a skin seam. The cloth, the card back, and the card face are CSS variables on the skin scope, so a host skin (PRODUCT.md: the host picks card face, card back, and table) swaps them without touching components. The silhouette and the chair are the per-player swap point: a player skin later replaces the figure (and its chair) for one seat, not for the table.
 
-**Scope today.** Home and the `rooms/[id]` route (room lobby and match table) are in this world. Home is the kafana menu: a closed menu cover in the room that opens to a house page and a page of public rooms. Sign-in, username, and account still use the stock shadcn neutral theme on `:root` and are not yet migrated. When they move, they move into the same world under the same rules.
+**Scope today.** Home, account, username, claim, and the `rooms/[id]` route (room lobby and match table) are in this world. Home is the kafana menu: a closed menu cover in the room that opens to a house page and a page of public rooms. Account and claim are letters from the kafana; username is an envelope you address. Only sign-in still uses the stock shadcn neutral theme on `:root`; it waits for a doorman scene at the kafana door. When they move, they move into the same world under the same rules.
 
 **Key Characteristics:**
 - A dim kafana room around a tilted wooden table; gingham cloth on the table top only. Nothing is written straight on the cloth.
@@ -300,6 +300,12 @@ Home, open. Two paper pages side by side (an 18rem house page and the room page)
 
 ### Room Menu
 The public rooms as a kafana menu. A search field (room owner or player) and a "With a free seat" toggle (oxblood fill when on) sit over sections, one per target score, each headed by a 2px ink rule. A room is a dish: "Room of <room owner>" in title weight, a dotted leader, and the price (the table's average rating) in Caveat 1.5rem; the seated players and free seats are a label line under it. The whole row is the link; hover fills it with paper shade. Ratings are made up until ranked play exists.
+
+### Kafana Letter
+How the house speaks to the player: account and claim. A paper sheet (max 28rem) rotated a little, with a letterhead (the title in Caveat 1.875rem and the four suit pips in card colours, over a 2px ink rule), a Caveat greeting ("Dear ana,"), a short body in Inter that states the facts, and "The house" signed in Caveat at the right. Anything the player answers is a reply slip below a 2px dashed cut line with a small scissors mark: the change-username form, the claim form, or the claim choice. Choices on a slip are dashed-border boxes, the count in Caveat 2.25rem, the action in oxblood; hover turns the border oxblood. Navigation and sign-out sit as small paper slips under the letter.
+
+### Envelope
+The username screen. A 16:9 paper envelope with its flap drawn as two faint diagonal folds; the name is written on the address line in Caveat as the player types (soft ink "your name" until then). The form sits on a paper slip below.
 
 ### Buttons
 Shadcn buttons, re-coloured by the skin.

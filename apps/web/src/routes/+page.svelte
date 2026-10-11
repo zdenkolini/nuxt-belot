@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { createQuery } from '@tanstack/svelte-query';
@@ -40,6 +41,21 @@
 </svelte:head>
 
 <main class="table-skin room grid min-h-svh place-items-center px-3 py-8 text-(--ink) md:px-8">
+	<!-- A claim link opened while the guest sat in a room comes back here. -->
+	{#if page.url.searchParams.get('error') === 'GUEST_IN_ROOM'}
+		{@const blockingRoom = page.url.searchParams.get('room')}
+		<div
+			class="paper fixed inset-x-0 top-3 z-20 mx-auto flex w-fit items-center gap-3 px-3 py-1.5 text-sm font-medium"
+			role="status"
+		>
+			{m.guest_in_room()}
+			{#if blockingRoom}
+				<Button size="sm" variant="outline" href={resolve('/rooms/[id]', { id: blockingRoom })}>
+					{m.go_to_room()}
+				</Button>
+			{/if}
+		</div>
+	{/if}
 	{#if !open}
 		<button
 			type="button"
@@ -80,7 +96,7 @@
 						<li class="flex items-baseline justify-between py-1.5">
 							<span class="font-semibold">{me.data.username}</span>
 							<a class="text-xs underline underline-offset-2" href={resolve('/account')}>
-								{m.account_link()}
+								{me.data.isGuest ? m.claim_account() : m.account_link()}
 							</a>
 						</li>
 					{/if}

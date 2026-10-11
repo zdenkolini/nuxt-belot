@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { authClient } from '#lib/account.js';
+	import { authClient, meQuery, queryClient } from '#lib/account.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
@@ -8,6 +8,13 @@
 
 	let email = $state('');
 	let status = $state<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+	let guestFailed = $state(false);
+
+	const playAsGuest = async () => {
+		const { error } = await authClient.signIn.anonymous();
+		guestFailed = !!error;
+		if (!error) await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
+	};
 
 	const submit = async (event: SubmitEvent) => {
 		event.preventDefault();
@@ -42,6 +49,10 @@
 					{/if}
 					<Button type="submit" disabled={status === 'sending'}>{m.send_link()}</Button>
 				</form>
+				<Button variant="outline" class="mt-3 w-full" onclick={playAsGuest}>{m.play_as_guest()}</Button>
+				{#if guestFailed}
+					<p class="mt-2 text-sm text-destructive" role="status">{m.guest_sign_in_failed()}</p>
+				{/if}
 			{/if}
 		</Card.Content>
 	</Card.Root>

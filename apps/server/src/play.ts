@@ -18,7 +18,7 @@ import type { Member } from './session';
 // What one seat sees of the match. `players` are by seat, also those who
 // left the room. `events` are those of the last move. `missing` holds the user ids of seated players who are not connected; the
 // match is paused while it is not empty. `ended` is true when the players
-// ended a paused match.
+// ended a paused match or one abandoned it; `abandonedBy` names who abandoned.
 export type MatchView = {
   seat: Seat;
   players: { id: string; username: string | null }[];
@@ -29,6 +29,7 @@ export type MatchView = {
   result: BelotResult | null;
   missing: string[];
   ended: boolean;
+  abandonedBy: string | null;
 };
 
 export type MatchMessage =
@@ -50,6 +51,7 @@ export type MoveRejection =
 type LiveMatch = {
   id: string;
   ended: boolean;
+  abandonedBy: string | null;
   variant: BelotVariant;
   seed: string;
   seats: string[];
@@ -99,6 +101,7 @@ export const createPlay = async (
     matches.set(saved.roomId!, {
       id: saved.id,
       ended: false,
+      abandonedBy: null,
       variant,
       seed: saved.seed,
       seats: saved.seats,
@@ -114,7 +117,9 @@ export const createPlay = async (
   const missingIn = (roomId: string, match: LiveMatch) => {
     if (isOver(match)) return [];
     const online = connected(roomId);
-    return match.seats.filter((userId) => !online.has(userId) && !isBot(userId));
+    return match.seats.filter(
+      (userId) => !online.has(userId) && !isBot(userId),
+    );
   };
 
   const viewOf = (
@@ -140,6 +145,7 @@ export const createPlay = async (
       result: belot.result(match.state),
       missing,
       ended: match.ended,
+      abandonedBy: match.abandonedBy,
     };
   };
 
@@ -182,6 +188,7 @@ export const createPlay = async (
       const match: LiveMatch = {
         id: saved!.id,
         ended: false,
+        abandonedBy: null,
         variant,
         seed,
         seats: seatedUsers,
@@ -245,6 +252,18 @@ export const createPlay = async (
         .set({ status: 'ended' })
         .where(eq(matchesTable.id, match.id));
       return { ok: true, views: views(roomId, match, []) } as const;
+    },
+
+    // A seated player leaves a running match on purpose: it ends for everyone.
+    abandon: async ({ roomId, userId }: Member) => {
+      const match = matches.get(roomId)!;
+      match.ended = true;
+      match.abandonedBy = userId;
+      await db
+        .update(matchesTable)
+        .set({ status: 'abandoned' })
+        .where(eq(matchesTable.id, match.id));
+      return views(roomId, match, []);
     },
 
     // The current match message for each seated user, keyed by user id.
