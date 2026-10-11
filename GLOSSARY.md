@@ -100,6 +100,14 @@ _Avoid_: Pad, fall, dedans, inside
 
 ### Players
 
+**Guest**:
+A player who plays without an email; their account lives only in the browser where they started, and they cannot play ranked matches.
+_Avoid_: Anonymous user, temporary account
+
+**Claim**:
+The act of a guest connecting an email to their account, so it lasts beyond one browser and they can choose a username.
+_Avoid_: Link, bind, convert, upgrade
+
 **Public profile**:
 A page anyone can open that shows one player's username and summary stats.
 _Avoid_: Player card, user page
