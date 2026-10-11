@@ -1,28 +1,19 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { api } from '#lib/api.js';
-	import { claimQuery, meQuery, queryClient } from '#lib/account.js';
-	import Variants from '#lib/components/account-prototype/variants.svelte';
-	import type { Choice } from '#lib/components/account-prototype/types.js';
+	import { claimQuery, queryClient } from '#lib/account.js';
+	import KafanaLetter from '#lib/components/kafana-letter.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
-	const me = createQuery(() => meQuery);
 	const claim = createQuery(() => claimQuery);
 	let choosing = $state(false);
-	let chooseFailed = $state(false);
+	let failed = $state(false);
 
-	// PROTOTYPE: ?demo shows made-up counts when no claim waits.
-	const shown = $derived(
-		claim.data ??
-			(page.url.searchParams.has('demo') ? { accountMatches: 12, guestMatches: 3 } : null),
-	);
-
-	const choose = async (choice: Choice) => {
+	const choose = async (choice: 'kept_account' | 'merged') => {
 		choosing = true;
 		const { error } = await api.me.claim.post({ choice });
 		choosing = false;
-		chooseFailed = !!error;
+		failed = !!error;
 		if (!error) await queryClient.invalidateQueries({ queryKey: claimQuery.queryKey });
 	};
 </script>
@@ -31,13 +22,35 @@
 	<title>{m.claim_choice_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<Variants
-	screen="claim"
-	demoLabel="demo claim"
-	me={me.data ?? null}
-	matches={null}
-	claim={shown}
-	{choosing}
-	{chooseFailed}
-	onchoose={choose}
-/>
+<main class="table-skin room grid min-h-svh place-items-center px-3 py-10 text-(--ink)">
+	{#if claim.data}
+		{@const options = [
+			{ choice: 'kept_account', label: m.your_account(), count: claim.data.accountMatches, action: m.claim_keep_short() },
+			{ choice: 'merged', label: m.this_guest(), count: claim.data.guestMatches, action: m.claim_merge_short() },
+		] as const}
+		<KafanaLetter greeting={m.letter_claim_greeting()} tilt={0.6}>
+			<h1 class="inline font-semibold">{m.claim_choice_title()}.</h1>
+			{m.claim_choice_description()}
+			{#snippet reply()}
+				<div class="grid gap-3 sm:grid-cols-2">
+					{#each options as option (option.choice)}
+						<button
+							type="button"
+							disabled={choosing}
+							onclick={() => choose(option.choice)}
+							class="flex flex-col gap-1 rounded-[2px] border border-dashed border-(--ink-soft)/60 px-4 py-3 text-left transition-colors hover:border-(--oxblood) hover:bg-(--muted) focus-visible:outline-2 focus-visible:outline-(--oxblood) disabled:opacity-60"
+						>
+							<span class="text-xs text-(--ink-soft)">{option.label}</span>
+							<span class="font-hand text-4xl leading-none font-bold tabular-nums">{option.count}</span>
+							<span class="text-xs text-(--ink-soft)">{m.matches_played()}</span>
+							<span class="mt-1 text-sm font-semibold text-(--oxblood)">{option.action}</span>
+						</button>
+					{/each}
+				</div>
+				{#if failed}
+					<p class="mt-3 text-sm text-(--oxblood)" role="status">{m.claim_choice_failed()}</p>
+				{/if}
+			{/snippet}
+		</KafanaLetter>
+	{/if}
+</main>
