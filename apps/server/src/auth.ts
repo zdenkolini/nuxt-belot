@@ -19,14 +19,15 @@ export type Email = { to: string; subject: string; text: string };
 const guestUsername = () =>
   `guest_${crypto.getRandomValues(new Uint8Array(6)).reduce((name, n) => name + (n % 36).toString(36), '')}`;
 
-const isInRoom = async (db: Db, userId: string) =>
-  (
-    await db
-      .select({ id: rooms.id })
-      .from(rooms)
-      .where(sql`${rooms.members} @> ${JSON.stringify([userId])}::jsonb`)
-      .limit(1)
-  ).length > 0;
+// The room the user is a member of, if any.
+const roomOf = async (db: Db, userId: string) => {
+  const [room] = await db
+    .select({ id: rooms.id })
+    .from(rooms)
+    .where(sql`${rooms.members} @> ${JSON.stringify([userId])}::jsonb`)
+    .limit(1);
+  return room?.id;
+};
 
 export type AuthOptions = {
   db: Db;
@@ -64,11 +65,15 @@ export const createAuth = ({
         if (!sending && ctx.path !== '/magic-link/verify') return;
         const session = await getSessionFromCtx(ctx);
         if (!session?.user.isAnonymous) return;
-        if (!(await isInRoom(db, session.user.id))) return;
-        if (!sending) throw ctx.redirect(`${webURL}/?error=GUEST_IN_ROOM`);
+        const roomId = await roomOf(db, session.user.id);
+        if (!roomId) return;
+        if (!sending) {
+          throw ctx.redirect(`${webURL}/?error=GUEST_IN_ROOM&room=${roomId}`);
+        }
         throw new APIError('CONFLICT', {
           code: 'GUEST_IN_ROOM',
           message: 'Leave your room before you claim your account',
+          roomId,
         });
       }),
     },

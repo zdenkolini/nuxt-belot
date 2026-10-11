@@ -36,7 +36,8 @@ export const matches = pgTable('matches', {
   variant: jsonb().notNull(),
   seats: jsonb().$type<string[]>().notNull(),
   seed: text().notNull(),
-  // running, finished (a team won), or ended (players ended it while paused).
+  // running, finished (a team won), ended (players ended it while paused), or
+  // abandoned (a player left it on purpose).
   status: text().notNull().default('running'),
   result: jsonb(),
 });
@@ -85,6 +86,8 @@ export const user = pgTable(
     username: text(),
     usernameChangedAt: timestamp(),
     isAnonymous: boolean(),
+    // Until then the player cannot take a seat, after abandoning a match.
+    seatCooldownUntil: timestamp(),
   },
   (t) => [uniqueIndex('user_username_lower').on(sql`lower(${t.username})`)],
 );

@@ -1,11 +1,17 @@
-import { expect, test } from 'bun:test';
+import { afterEach, expect, setSystemTime, test } from 'bun:test';
 import { claims } from '@belot/db';
 import { linkIn, setup, webURL, type Session } from './test-setup';
 
 type Ctx = Awaited<ReturnType<typeof setup>>;
 
-// The player starts a match against three bots, then leaves the room; the
-// match stays in their match history.
+afterEach(() => setSystemTime());
+
+// Past the cooldown that leaving a match mid-play starts.
+const afterCooldown = () =>
+  setSystemTime(new Date(Date.now() + 21 * 60 * 1000));
+
+// The player starts a match against three bots, then leaves the room, which
+// abandons it; the match stays in their match history.
 const playMatch = async ({ api }: Ctx, session: Session) => {
   const { data } = await api.rooms.post({}, session);
   const room = api.rooms({ id: data!.id });
@@ -37,11 +43,14 @@ test('a guest cannot rename; they claim their account first', async () => {
 test('a guest in a room cannot ask for a claim link', async () => {
   const { api, sent, guest, requestLink } = await setup();
   const me = await guest();
-  await api.rooms.post({}, me);
+  const { data: room } = await api.rooms.post({}, me);
 
   const res = await requestLink('ana@example.com', me);
   expect(res.status).toBe(409);
-  expect(await res.json()).toMatchObject({ code: 'GUEST_IN_ROOM' });
+  expect(await res.json()).toMatchObject({
+    code: 'GUEST_IN_ROOM',
+    roomId: room!.id,
+  });
   expect(sent).toHaveLength(0);
 });
 
@@ -49,11 +58,13 @@ test('a guest who joins a room after asking cannot claim with that link', async 
   const { app, api, sent, guest, requestLink } = await setup();
   const me = await guest();
   await requestLink('ana@example.com', me);
-  await api.rooms.post({}, me);
+  const { data: room } = await api.rooms.post({}, me);
 
   const res = await app.handle(new Request(linkIn(sent[0]!), me));
   expect(res.status).toBe(302);
-  expect(res.headers.get('location')).toBe(`${webURL}/?error=GUEST_IN_ROOM`);
+  expect(res.headers.get('location')).toBe(
+    `${webURL}/?error=GUEST_IN_ROOM&room=${room!.id}`,
+  );
   expect((await api.me.get(me)).data).toMatchObject({
     id: me.id,
     isGuest: true,
@@ -152,6 +163,7 @@ test('a merge adds the guest matches, but not a match where both sat', async () 
   const me = await ctx.guest();
   await playMatch(ctx, ana);
   await playMatch(ctx, me);
+  afterCooldown();
   // Ana and her guest at one table, on opposite teams.
   const { data } = await api.rooms.post({}, ana);
   const room = api.rooms({ id: data!.id });

@@ -9,6 +9,8 @@ import type { Member, Session } from './session';
 
 type Room = typeof rooms.$inferSelect;
 
+const abandonCooldown = 20 * 60 * 1000;
+
 export type RoomView = {
   id: string;
   ownerId: string;
@@ -268,9 +270,6 @@ export const roomRoutes = async (db: Db, session: Session, bots: boolean) => {
           if (room.removed.includes(userId))
             return status(403, { error: 'removed_from_room' as const });
           if (!room.members.includes(userId)) room.members.push(userId);
-          // A player who left mid-match takes their seat back.
-          const seat = play.seatOf({ roomId: room.id, userId });
-          if (seat !== undefined) room.seats[seat] = userId;
         });
         return result.ok ? result.room : result.failure;
       },
@@ -279,6 +278,14 @@ export const roomRoutes = async (db: Db, session: Session, bots: boolean) => {
     .post(
       '/:id/leave',
       async ({ userId, params: { id } }) => {
+        // Leaving a match still in play abandons it.
+        if (play.seatOf({ roomId: id, userId }) !== undefined) {
+          sendMatch(id, await play.abandon({ roomId: id, userId }));
+          await db
+            .update(user)
+            .set({ seatCooldownUntil: new Date(Date.now() + abandonCooldown) })
+            .where(eq(user.id, userId));
+        }
         const result = await update(id, (room) => {
           const failure = notMember(room, userId);
           if (failure) return failure;
@@ -293,6 +300,16 @@ export const roomRoutes = async (db: Db, session: Session, bots: boolean) => {
     .put(
       '/:id/seat',
       async ({ userId, params: { id }, body: { seat } }) => {
+        const [me] = await db
+          .select({ until: user.seatCooldownUntil })
+          .from(user)
+          .where(eq(user.id, userId));
+        if (me!.until && me!.until.getTime() > Date.now()) {
+          return status(409, {
+            error: 'cooldown' as const,
+            until: me!.until.toISOString(),
+          });
+        }
         const result = await update(id, (room) => {
           const failure = notMember(room, userId) ?? matchRunning(room);
           if (failure) return failure;

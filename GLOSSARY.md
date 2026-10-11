@@ -47,8 +47,8 @@ The waiting list where players ask for a ranked match and are matched with other
 _Avoid_: Matchmaking lobby, search
 
 **Forfeit**:
-A team losing a ranked match because one of its players left and did not return in time.
-_Avoid_: Abandon, surrender
+A team losing a ranked match because one of its players left it, on purpose or by losing the connection and not returning in time.
+_Avoid_: Surrender
 
 ### Cards
 
@@ -103,6 +103,14 @@ _Avoid_: Pad, fall, dedans, inside
 **Guest**:
 A player who plays without an email; their account lives only in the browser where they started, and they cannot play ranked matches.
 _Avoid_: Anonymous user, temporary account
+
+**Abandon**:
+A seated player leaving a running casual match on purpose, which ends the match for everyone at the table.
+_Avoid_: Quit, rage-quit, leave match
+
+**Cooldown**:
+The time after an abandon during which the player cannot take a seat in any room.
+_Avoid_: Timeout, ban, penalty
 
 **Claim**:
 The act of a guest connecting an email to their account, so it lasts beyond one browser and they can choose a username.
