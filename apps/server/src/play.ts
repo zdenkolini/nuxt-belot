@@ -12,6 +12,7 @@ import {
   type Seat,
 } from '@belot/engine';
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { isBot } from './bots';
 import type { Member } from './session';
 
 // What one seat sees of the match. `players` are by seat, also those who
@@ -113,7 +114,7 @@ export const createPlay = async (
   const missingIn = (roomId: string, match: LiveMatch) => {
     if (isOver(match)) return [];
     const online = connected(roomId);
-    return match.seats.filter((userId) => !online.has(userId));
+    return match.seats.filter((userId) => !online.has(userId) && !isBot(userId));
   };
 
   const viewOf = (

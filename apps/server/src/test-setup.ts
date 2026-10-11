@@ -26,6 +26,7 @@ export const setup = async (db?: Db) => {
     baseURL,
     secret: 'test-secret-that-is-at-least-32-chars',
     webURL,
+    bots: true,
   });
   const api = treaty(app);
 
