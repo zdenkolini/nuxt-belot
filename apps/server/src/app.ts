@@ -19,7 +19,8 @@ const isUniqueViolation = (e: unknown) =>
   (e.cause as { code?: string } | undefined)?.code === '23505';
 
 // Async because live matches are rebuilt from the database first.
-export const createApp = async (options: AuthOptions) => {
+// `bots` lets a room owner seat bots; for testing, never in production.
+export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
   const { db } = options;
   const auth = createAuth(options);
   const session = createSession(auth);
@@ -28,7 +29,7 @@ export const createApp = async (options: AuthOptions) => {
     .use(cors({ origin: options.webURL, credentials: true }))
     .mount(auth.handler)
     .use(session)
-    .use(await roomRoutes(db, session))
+    .use(await roomRoutes(db, session, options.bots ?? false))
     .get('/health', () => ({ status: 'ok' as const }))
     .get(
       '/me',

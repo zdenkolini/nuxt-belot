@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn-svelte/tailwind.css";
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/caveat";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -76,6 +77,7 @@
 
 @theme inline {
 	--font-sans: 'Inter Variable', sans-serif;
+	--font-hand: 'Caveat Variable', cursive;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -125,5 +127,127 @@
 	}
 	html {
 		@apply font-sans;
+	}
+}
+
+/*
+ * The kafana table: the default table skin. A skin swaps the cloth, the card
+ * back, and the card face by replacing these variables. :root:has() so that
+ * dialogs portalled to <body> sit on the same table.
+ */
+:root:has(.table-skin) {
+	--cloth: oklch(0.975 0.006 85);
+	--cloth-thread: oklch(0.56 0.19 26 / 0.5);
+	--cloth-size: 2rem;
+	--paper: oklch(0.985 0.008 95);
+	--paper-rule: oklch(0.7 0.07 245 / 0.4);
+	--ink: oklch(0.26 0.06 262);
+	--ink-soft: oklch(0.44 0.05 262);
+	--oxblood: oklch(0.4 0.14 22);
+	--card-face: oklch(0.995 0.002 95);
+	--card-red: oklch(0.53 0.21 27);
+	--card-black: oklch(0.2 0.02 262);
+	--card-back: oklch(0.4 0.14 22);
+	--card-back-line: oklch(0.995 0.002 95 / 0.22);
+	--coaster: oklch(0.83 0.05 70);
+	--wall: oklch(0.34 0.05 150);
+	--wall-trim: oklch(0.22 0.03 60);
+	--floor: oklch(0.34 0.06 55);
+	--floor-seam: oklch(0.28 0.05 50);
+	--lamp: oklch(0.78 0.09 70 / 0.35);
+	--chair: oklch(0.42 0.07 50);
+	--chair-dark: oklch(0.3 0.05 45);
+	--silhouette: oklch(0.16 0.02 260);
+
+	--background: var(--paper);
+	--foreground: var(--ink);
+	--card: var(--paper);
+	--card-foreground: var(--ink);
+	--popover: var(--paper);
+	--popover-foreground: var(--ink);
+	--primary: var(--oxblood);
+	--primary-foreground: var(--card-face);
+	--muted: oklch(0.93 0.015 95);
+	--muted-foreground: var(--ink-soft);
+	--accent: oklch(0.93 0.015 95);
+	--accent-foreground: var(--ink);
+	--border: oklch(0.26 0.06 262 / 0.28);
+	--input: oklch(0.26 0.06 262 / 0.28);
+	--ring: var(--oxblood);
+	--destructive: var(--oxblood);
+	--radius: 0.25rem;
+
+	::selection {
+		background: oklch(0.4 0.14 22 / 0.2);
+	}
+}
+
+@layer components {
+	/* Gingham: red threads both ways over white; where they cross the red doubles. */
+	.cloth {
+		background-color: var(--cloth);
+		background-image:
+			radial-gradient(ellipse at 50% 45%, transparent 55%, oklch(0.25 0.08 25 / 0.28)),
+			repeating-linear-gradient(45deg, oklch(0 0 0 / 0.025) 0 1px, transparent 1px 3px),
+			linear-gradient(90deg, var(--cloth-thread) 50%, transparent 50%),
+			linear-gradient(var(--cloth-thread) 50%, transparent 50%);
+		background-size:
+			100% 100%,
+			auto,
+			var(--cloth-size) var(--cloth-size),
+			var(--cloth-size) var(--cloth-size);
+		background-attachment: fixed;
+	}
+
+	/* The kafana room around the table: wall, trim, plank floor, one lamp. */
+	.room {
+		background-color: var(--floor);
+		background-image:
+			radial-gradient(ellipse 75% 55% at 50% 55%, var(--lamp), transparent 70%),
+			radial-gradient(ellipse at 50% 50%, transparent 50%, oklch(0.12 0.03 40 / 0.65)),
+			linear-gradient(var(--wall) 0 22svh, var(--wall-trim) 22svh calc(22svh + 0.4rem), transparent 0),
+			repeating-linear-gradient(90deg, var(--floor) 0 4.5rem, var(--floor-seam) 4.5rem calc(4.5rem + 2px));
+	}
+
+	/* The cloth laid on a wooden table; tilted by --tilt from the parent. */
+	.tabletop {
+		background-attachment: scroll;
+		border-radius: 4px;
+		transform: rotateX(var(--tilt, 0deg));
+		transform-origin: 50% 60%;
+		box-shadow:
+			0 0 0 0.5rem oklch(0.35 0.07 45),
+			0 0.75rem 0 0.5rem oklch(0.24 0.05 40),
+			0 1.5rem 2rem oklch(0.08 0.02 40 / 0.7);
+	}
+
+	.chair {
+		border-radius: 6px 6px 2px 2px;
+		background: repeating-linear-gradient(90deg, var(--chair) 0 18%, var(--chair-dark) 18% 24%);
+		box-shadow: 0 6px 10px oklch(0.1 0.02 40 / 0.6);
+	}
+
+	.figure {
+		fill: var(--silhouette);
+		filter: drop-shadow(0 0 1.5px oklch(0.85 0.08 70 / 0.6));
+	}
+
+	.paper {
+		background-color: var(--paper);
+		color: var(--ink);
+		border-radius: 2px;
+		box-shadow:
+			0 1px 1px oklch(0.25 0.08 25 / 0.18),
+			0 8px 18px -6px oklch(0.25 0.08 25 / 0.45);
+	}
+
+	.card-back {
+		border: 2px solid var(--card-face);
+		border-radius: 3px;
+		background-color: var(--card-back);
+		background-image:
+			repeating-linear-gradient(45deg, var(--card-back-line) 0 1px, transparent 1px 5px),
+			repeating-linear-gradient(-45deg, var(--card-back-line) 0 1px, transparent 1px 5px);
+		box-shadow: 0 1px 2px oklch(0.25 0.08 25 / 0.4);
 	}
 }

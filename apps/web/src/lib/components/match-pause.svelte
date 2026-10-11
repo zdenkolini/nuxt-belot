@@ -29,10 +29,10 @@
 </script>
 
 {#if match.ended}
-	<div class="fixed inset-0 z-30 flex items-center justify-center bg-background/80 p-4">
-		<Card.Root class="w-full max-w-sm">
+	<div class="fixed inset-0 z-30 flex items-center justify-center bg-[oklch(0.2_0.06_25/0.45)] p-4">
+		<Card.Root class="paper w-full max-w-sm rounded-[2px] ring-0">
 			<Card.Header>
-				<Card.Title>{m.match_ended()}</Card.Title>
+				<Card.Title class="font-hand text-4xl leading-none">{m.match_ended()}</Card.Title>
 				<Card.Description>{m.match_ended_by_players()}</Card.Description>
 			</Card.Header>
 			<Card.Footer>
@@ -42,7 +42,7 @@
 	</div>
 {:else if match.missing.length > 0}
 	<div
-		class="fixed inset-x-0 top-12 z-20 mx-auto flex w-fit items-center gap-3 rounded-md border bg-background px-3 py-2 text-sm shadow"
+		class="paper fixed inset-x-0 top-14 z-20 mx-auto flex w-fit items-center gap-3 px-3 py-2 text-sm"
 		role="status"
 	>
 		<span>{m.waiting_for({ usernames: missing })}</span>

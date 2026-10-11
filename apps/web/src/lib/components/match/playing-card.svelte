@@ -1,26 +1,46 @@
 <script lang="ts">
 	import type { Card } from '@belot/engine';
-	import { cardName, isRed, rankNames, suitSymbols } from './cards.js';
+	import { cardName, isRed, rankNames } from './cards.js';
+	import SuitPip from './suit-pip.svelte';
 
 	let {
 		card,
 		onclick,
 		playable = false,
-	}: { card: Card; onclick?: () => void; playable?: boolean } = $props();
+		dimmed = false,
+		won = false,
+	}: { card: Card; onclick?: () => void; playable?: boolean; dimmed?: boolean; won?: boolean } =
+		$props();
+
+	// Sized by the parent through --card-w; everything inside scales with the card.
+	const classes = $derived([
+		'@container relative block aspect-[5/7] w-(--card-w) rounded-[6%/4.3%] bg-(--card-face) shadow-[0_1px_1px_oklch(0.25_0.08_25/0.25),0_6px_14px_-4px_oklch(0.25_0.08_25/0.5)] select-none',
+		isRed(card.suit) ? 'text-(--card-red)' : 'text-(--card-black)',
+		won && 'outline-3 outline-offset-2 outline-(--oxblood)',
+	]);
 </script>
 
 {#snippet face()}
-	<span class="text-sm leading-none font-semibold sm:text-base">{rankNames[card.rank]()}</span>
-	<span class="text-xl leading-none sm:text-2xl" aria-hidden="true">{suitSymbols[card.suit]}</span>
+	{#each ['top-[5%] left-[7%]', 'right-[7%] bottom-[5%] rotate-180'] as corner (corner)}
+		<span class="absolute flex flex-col items-center {corner}" aria-hidden="true">
+			<span class="text-[27cqw] leading-none font-bold tracking-[-0.04em]">
+				{rankNames[card.rank]()}
+			</span>
+			<SuitPip suit={card.suit} class="mt-[3cqw] size-[17cqw]" />
+		</span>
+	{/each}
+	<SuitPip suit={card.suit} class="absolute inset-0 m-auto size-[44cqw]" />
 {/snippet}
 
 {#if onclick}
 	<button
 		type="button"
 		class={[
-			'flex h-20 w-14 flex-col items-center justify-center gap-1 rounded-md border bg-white shadow-sm transition sm:h-24 sm:w-16',
-			isRed(card.suit) ? 'text-red-600' : 'text-neutral-900',
-			playable ? 'cursor-pointer hover:-translate-y-2 hover:shadow-md' : 'opacity-50',
+			classes,
+			'transition-[translate,filter,box-shadow] duration-200 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-(--oxblood)',
+			playable &&
+				'cursor-pointer hover:-translate-y-[18%] hover:shadow-[0_2px_2px_oklch(0.25_0.08_25/0.25),0_16px_24px_-6px_oklch(0.25_0.08_25/0.55)] focus-visible:-translate-y-[18%]',
+			dimmed && 'translate-y-[8%] brightness-[0.9] saturate-[0.4]',
 		]}
 		disabled={!playable}
 		aria-label={cardName(card)}
@@ -29,14 +49,7 @@
 		{@render face()}
 	</button>
 {:else}
-	<div
-		class={[
-			'flex h-20 w-14 flex-col items-center justify-center gap-1 rounded-md border bg-white shadow-sm sm:h-24 sm:w-16',
-			isRed(card.suit) ? 'text-red-600' : 'text-neutral-900',
-		]}
-		role="img"
-		aria-label={cardName(card)}
-	>
+	<div class={classes} role="img" aria-label={cardName(card)}>
 		{@render face()}
 	</div>
 {/if}

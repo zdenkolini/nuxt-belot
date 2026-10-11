@@ -2,6 +2,7 @@ import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray } from 'drizzle-orm';
 import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
+import { botIds, botMove, createBots, isBot } from './bots';
 import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
 import { createPlay, type MatchIntent, type MatchMessage } from './play';
 import type { Member, Session } from './session';
@@ -50,12 +51,13 @@ const nextOwner = (room: Room) => {
   const from = room.seats.indexOf(room.ownerId);
   for (let i = 1; i <= 4; i++) {
     const id = room.seats[(from + i + 4) % 4];
-    if (id && id !== room.ownerId) return id;
+    if (id && id !== room.ownerId && !isBot(id)) return id;
   }
-  return room.members.find((id) => id !== room.ownerId);
+  return room.members.find((id) => id !== room.ownerId && !isBot(id));
 };
 
-export const roomRoutes = async (db: Db, session: Session) => {
+export const roomRoutes = async (db: Db, session: Session, bots: boolean) => {
+  if (bots) await createBots(db);
   // Open room sockets by room id, then by connection id.
   const sockets = new Map<string, Map<string, Socket>>();
   const chat = createChat();
@@ -71,6 +73,37 @@ export const roomRoutes = async (db: Db, session: Session) => {
       const message = messages.get(socket.userId);
       if (message) socket.send(message);
     }
+  };
+
+  // A bot whose turn it is plays after a short pause, and so on, until a
+  // person is to play or the match is paused or over.
+  const thinking = new Set<string>();
+  const runBots = (roomId: string) => {
+    if (!bots || thinking.has(roomId)) return;
+    const turn = [...play.viewsOf(roomId)].find(
+      ([userId, message]) =>
+        isBot(userId) &&
+        message.type === 'match' &&
+        message.match.legalMoves.length > 0 &&
+        message.match.missing.length === 0,
+    );
+    if (!turn) return;
+    thinking.add(roomId);
+    setTimeout(async () => {
+      thinking.delete(roomId);
+      const [userId, message] = turn;
+      if (message.type !== 'match') return;
+      const done = await play.move(
+        { roomId, userId },
+        botMove(message.match.legalMoves),
+      );
+      if (done.ok) sendMatch(roomId, done.views);
+    }, 700);
+  };
+
+  const sendMatch = (roomId: string, messages: Map<string, RoomMessage>) => {
+    sendEach(roomId, messages);
+    runBots(roomId);
   };
 
   const view = async (room: Room): Promise<RoomView> => {
@@ -171,6 +204,8 @@ export const roomRoutes = async (db: Db, session: Session) => {
     }
     room.members = room.members.filter((id) => id !== userId);
     room.seats = room.seats.map((id) => (id === userId ? null : id));
+    // A room with only bots left is gone.
+    if (room.members.every(isBot)) room.members = [];
   };
 
   // Opening a socket reads the room first. Messages and the close that come
@@ -320,6 +355,28 @@ export const roomRoutes = async (db: Db, session: Session) => {
       },
     )
     .post(
+      '/:id/bots',
+      async ({ userId, params: { id }, body: { seat } }) => {
+        if (!bots) return status(404, { error: 'bots_disabled' as const });
+        const result = await update(id, (room) => {
+          const failure = notOwner(room, userId) ?? matchRunning(room);
+          if (failure) return failure;
+          if (room.seats[seat])
+            return status(409, { error: 'seat_taken' as const });
+          const bot = botIds.find((b) => !room.members.includes(b));
+          if (!bot) return status(409, { error: 'no_bot_left' as const });
+          room.members.push(bot);
+          room.seats[seat] = bot;
+        });
+        return result.ok ? result.room : result.failure;
+      },
+      {
+        player: true,
+        params: t.Object({ id: t.String({ format: 'uuid' }) }),
+        body: t.Object({ seat: t.Integer({ minimum: 0, maximum: 3 }) }),
+      },
+    )
+    .post(
       '/:id/start',
       async ({ userId, params: { id } }) => {
         const result = await update(id, (room) => {
@@ -331,7 +388,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
         });
         if (!result.ok) return result.failure;
         const { seats, targetScore } = result.room!;
-        sendEach(id, await play.start(id, seats as string[], { targetScore }));
+        sendMatch(id, await play.start(id, seats as string[], { targetScore }));
         return { started: true };
       },
       { player: true, params: t.Object({ id: t.String({ format: 'uuid' }) }) },
@@ -359,7 +416,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
           socket.send({ type: 'room', room: await view(room) });
           // A seated player coming back may end the pause for everyone.
           if (play.seatOf(socket) !== undefined) {
-            sendEach(params.id, play.viewsOf(params.id));
+            sendMatch(params.id, play.viewsOf(params.id));
           } else {
             const match = play.viewFor(socket);
             if (match) socket.send(match);
@@ -383,7 +440,7 @@ export const roomRoutes = async (db: Db, session: Session) => {
             intent.type === 'match.move'
               ? await play.move(socket, intent.move ?? {})
               : await play.end(socket);
-          if (done.ok) sendEach(socket.roomId, done.views);
+          if (done.ok) sendMatch(socket.roomId, done.views);
           else socket.send({ type: 'match.rejected', reason: done.reason });
         } else if (String(intent?.type).startsWith('chat.')) {
           chat.handle(socket, intent as ChatIntent, [...roomSockets.values()]);

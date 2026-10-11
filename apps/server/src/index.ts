@@ -10,6 +10,7 @@ const app = await createApp({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
   secret: process.env.BETTER_AUTH_SECRET ?? 'dev-secret-change-me-in-production',
   webURL: process.env.WEB_URL ?? 'http://localhost:5173',
+  bots: process.env.NODE_ENV !== 'production',
 });
 
 app.listen(Number(process.env.PORT ?? 3000));

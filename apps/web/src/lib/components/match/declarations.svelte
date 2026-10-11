@@ -1,16 +1,17 @@
 <script lang="ts">
 	import type { BelotView, Declaration, Seat, Team } from '@belot/engine';
 	import { m } from '#lib/paraglide/messages.js';
-	import { rankNames, suitSymbols } from './cards.js';
+	import { isRed, rankNames } from './cards.js';
+	import SuitPip from './suit-pip.svelte';
 
 	let {
 		view,
 		usernameOf,
-		teamName,
+		myTeam,
 	}: {
 		view: BelotView;
 		usernameOf: (seat: Seat) => string;
-		teamName: (team: Team) => string;
+		myTeam: Team;
 	} = $props();
 
 	const kindName = (declaration: Declaration) =>
@@ -36,11 +37,15 @@
 								points: declaration.points,
 							})}
 						</span>
-						<span class="text-xs text-muted-foreground" aria-hidden="true">
-							{declaration.cards
-								.map((card) => `${rankNames[card.rank]()}${suitSymbols[card.suit]}`)
-								.join(' ')}
-						</span>
+						<span class="flex gap-2 text-xs" aria-hidden="true">
+								{#each declaration.cards as card (card.id)}
+									<span
+										class="flex items-center {isRed(card.suit) ? 'text-(--card-red)' : 'text-(--card-black)'}"
+									>
+										{rankNames[card.rank]()}<SuitPip suit={card.suit} class="size-3" />
+									</span>
+								{/each}
+							</span>
 					</li>
 				{/each}
 				{#if view.belote !== null}
@@ -48,8 +53,10 @@
 				{/if}
 			</ul>
 			{#if scoring !== undefined}
-				<p class="font-medium">
-					{m.declarations_score({ team: teamName(scoring), points: view.declarationPoints[scoring] })}
+				<p class="text-sm text-(--ink-soft)">
+					{(scoring === myTeam ? m.declarations_score_us : m.declarations_score_them)({
+						points: view.declarationPoints[scoring],
+					})}
 				</p>
 			{/if}
 		</section>

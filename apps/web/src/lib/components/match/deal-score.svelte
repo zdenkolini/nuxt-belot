@@ -11,8 +11,7 @@
 		[m.declarations, score.declarations],
 		[m.belote, score.belote],
 	]);
-	const teamName = (team: Team) =>
-		team === myTeam ? m.team_you({ number: team + 1 }) : m.team_number({ number: team + 1 });
+	const teamName = (team: Team) => (team === myTeam ? m.score_us() : m.score_them());
 	// On a failed contract the other team takes all points of the deal.
 	const takesAll = $derived(score.points[0] > 0 ? 0 : 1);
 </script>
