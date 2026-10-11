@@ -14,7 +14,7 @@
 	const go = (params: (p: URLSearchParams) => void) => {
 		const url = new URL(page.url.href);
 		params(url.searchParams);
-		goto(url, { replaceState: true });
+		goto(url, { replace: true });
 	};
 	const step = (by: number) =>
 		go((p) => p.set('variant', variants[(index + by + variants.length) % variants.length].key));

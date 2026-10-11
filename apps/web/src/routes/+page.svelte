@@ -9,9 +9,8 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { PublicRoom } from '@belot/server';
-	import Floor from '#lib/components/home-prototype/floor.svelte';
-	import Pad from '#lib/components/home-prototype/pad.svelte';
-	import Rack from '#lib/components/home-prototype/rack.svelte';
+	import Cover from '#lib/components/home-prototype/cover.svelte';
+	import House from '#lib/components/home-prototype/house.svelte';
 	import PrototypeSwitcher from '#lib/components/prototype-switcher.svelte';
 
 	const me = createQuery(() => meQuery);
@@ -34,20 +33,20 @@
 		if (data) goto(resolve('/rooms/[id]', { id: data.id }));
 	};
 
-	// PROTOTYPE: three home layouts, ?variant=floor|pad|rack; ?demo adds made-up rooms.
+	// PROTOTYPE: home layouts, ?variant=cover|house|old; ?demo adds made-up rooms.
 	const variants = [
-		{ key: 'floor', name: 'Kafana floor' },
-		{ key: 'pad', name: "Waiter's pad" },
-		{ key: 'rack', name: 'Coat rack' },
+		{ key: 'cover', name: 'Menu cover' },
+		{ key: 'house', name: 'House menu' },
 		{ key: 'old', name: 'Current page' },
 	];
-	const variant = $derived(page.url.searchParams.get('variant') ?? 'floor');
+	const variant = $derived(page.url.searchParams.get('variant') ?? 'cover');
 	const demoRooms: PublicRoom[] = [
-		{ id: 'demo-1', owner: 'marko_bg', targetScore: 701, freeSeats: 1 },
-		{ id: 'demo-2', owner: 'ana', targetScore: 501, freeSeats: 2 },
-		{ id: 'demo-3', owner: 'joca1001', targetScore: 1001, freeSeats: 3 },
-		{ id: 'demo-4', owner: 'vesna_ns', targetScore: 701, freeSeats: 1 },
-		{ id: 'demo-5', owner: 'dule', targetScore: 501, freeSeats: 3 },
+		{ id: 'demo-1', owner: 'marko_bg', targetScore: 701, players: ['marko_bg', 'zoki', 'ivana'] },
+		{ id: 'demo-2', owner: 'ana', targetScore: 501, players: ['ana', 'bane'] },
+		{ id: 'demo-3', owner: 'joca1001', targetScore: 1001, players: ['joca1001'] },
+		{ id: 'demo-4', owner: 'vesna_ns', targetScore: 701, players: ['vesna_ns', 'mile', 'sneki'] },
+		{ id: 'demo-5', owner: 'dule', targetScore: 501, players: ['dule'] },
+		{ id: 'demo-6', owner: 'gaga', targetScore: 1001, players: ['gaga', 'pera', 'laza', 'mika'] },
 	];
 	const rooms = $derived([
 		...(publicRooms.data ?? []),
@@ -67,12 +66,10 @@
 </svelte:head>
 
 <PrototypeSwitcher {variants} />
-{#if variant === 'floor'}
-	<Floor {...props} />
-{:else if variant === 'pad'}
-	<Pad {...props} />
-{:else if variant === 'rack'}
-	<Rack {...props} />
+{#if variant === 'cover'}
+	<Cover {...props} />
+{:else if variant === 'house'}
+	<House {...props} />
 {:else}
 <main class="flex min-h-svh items-center justify-center p-4">
 	<Card.Root class="w-full max-w-md">
@@ -89,7 +86,7 @@
 							<li class="flex items-center justify-between gap-2 text-sm">
 								<span>
 									{m.room_of({ owner: room.owner ?? '' })} ·
-									{m.free_seats({ count: room.freeSeats })} ·
+									{m.free_seats({ count: 4 - room.players.length })} ·
 									{m.target_score_value({ score: room.targetScore })}
 								</span>
 								<Button
