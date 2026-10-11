@@ -10,7 +10,8 @@ export const authClient = createAuthClient({
 
 export const queryClient = new QueryClient();
 
-// Null when signed out.
+// Null when signed out. Polled, so a seated player sees their match start
+// or end from any page.
 export const meQuery = queryOptions({
 	queryKey: ['me'],
 	queryFn: async () => {
@@ -19,6 +20,7 @@ export const meQuery = queryOptions({
 		if (error) throw error;
 		return data;
 	},
+	refetchInterval: 10_000,
 });
 
 // A claim into an existing account that waits for the player's choice.

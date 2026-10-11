@@ -39,7 +39,7 @@
 						</h1>
 						{#if me.data!.isGuest}
 							<p class="text-xs text-(--ink-soft)">{m.claim_description()}</p>
-							<ClaimForm />
+							<ClaimForm seated={!!me.data!.room} />
 						{:else}
 							<UsernameForm />
 						{/if}

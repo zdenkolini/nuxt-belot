@@ -1,10 +1,11 @@
 <script lang="ts">
 	import './layout.css';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { QueryClientProvider, createQuery } from '@tanstack/svelte-query';
 	import favicon from '#lib/assets/favicon.svg';
 	import { claimQuery, meQuery, queryClient } from '#lib/account.js';
+	import RoomReturn from '#lib/components/room-return.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -18,6 +19,8 @@
 		() => ({ ...claimQuery, enabled: !!me.data?.username && !me.data.isGuest }),
 		() => queryClient,
 	);
+
+	afterNavigate(() => queryClient.invalidateQueries({ queryKey: ['me'], exact: true }));
 
 	// Signed-out players may only sign in; new players must pick a username
 	// first; a claim into an existing account waits for the player's choice.
@@ -55,5 +58,6 @@
 <QueryClientProvider client={queryClient}>
 	{#if !me.isPending && (!target || target === page.url.pathname)}
 		{@render children()}
+		{#if me.data?.username}<RoomReturn />{/if}
 	{/if}
 </QueryClientProvider>

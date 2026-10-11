@@ -30,7 +30,10 @@
 	// Replaced wholesale by each room the server sends.
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
-	let notice = $state<string | null>(null);
+	// A claim link opened during a running match comes back here.
+	let notice = $state<string | null>(
+		page.url.searchParams.get('claim') === 'match_running' ? m.claim_after_match() : null,
+	);
 	let socket = $state<RoomSocket | null>(null);
 	// Replaced wholesale by each match view the server sends.
 	let match = $state<MatchView | null>(null);
@@ -110,12 +113,10 @@
 		notice = null;
 		const { error } = await request;
 		if (!error) return;
-		const value = error.value as { error?: string; until?: Date } | undefined;
+		const value = error.value as { error?: string } | undefined;
 		notice =
-			value?.error === 'cooldown'
-				? m.seat_cooldown({
-						time: new Date(value.until!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-					})
+			value?.error === 'seated_in_match'
+				? m.seated_in_match()
 				: value?.error === 'match_running'
 				? m.match_running()
 				: error.status === 409
