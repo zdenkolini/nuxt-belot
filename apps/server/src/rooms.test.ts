@@ -81,16 +81,17 @@ test('only members can open the room socket', async () => {
   expect(socket.isClosed()).toBe(true);
 });
 
-test('a private room is not listed; a public room is listed with its free seats', async () => {
+test('a private room is not listed; a public room is listed with its seated players', async () => {
   const { api, roomId, players } = await roomWith('bob');
   const [ana, bob] = players;
   expect((await api.rooms.get(bob)).data).toEqual([]);
 
   await api.rooms({ id: roomId }).patch({ isPublic: true }, ana);
-  await api.rooms({ id: roomId }).seat.put({ seat: 0 }, ana);
+  await api.rooms({ id: roomId }).seat.put({ seat: 2 }, ana);
+  await api.rooms({ id: roomId }).seat.put({ seat: 0 }, bob);
   const { data } = await api.rooms.get(bob);
   expect(data).toEqual([
-    { id: roomId, owner: 'ana', targetScore: 1001, freeSeats: 3 },
+    { id: roomId, owner: 'ana', targetScore: 1001, players: ['bob', 'ana'] },
   ]);
 });
 
