@@ -1,14 +1,8 @@
-import { afterEach, expect, setSystemTime, test } from 'bun:test';
+import { expect, test } from 'bun:test';
 import { claims } from '@belot/db';
 import { linkIn, setup, webURL, type Session } from './test-setup';
 
 type Ctx = Awaited<ReturnType<typeof setup>>;
-
-afterEach(() => setSystemTime());
-
-// Past the cooldown that leaving a match mid-play starts.
-const afterCooldown = () =>
-  setSystemTime(new Date(Date.now() + 21 * 60 * 1000));
 
 // The player starts a match against three bots, then leaves the room, which
 // abandons it; the match stays in their match history.
@@ -40,34 +34,69 @@ test('a guest cannot rename; they claim their account first', async () => {
   expect(error?.value).toEqual({ error: 'guest_cannot_rename' });
 });
 
-test('a guest in a room cannot ask for a claim link', async () => {
-  const { api, sent, guest, requestLink } = await setup();
+test('asking for a claim link takes the guest out of their room', async () => {
+  const { api, sent, guest, player, connect, requestLink } = await setup();
   const me = await guest();
-  const { data: room } = await api.rooms.post({}, me);
+  const bob = await player('bob');
+  const { data } = await api.rooms.post({}, me);
+  const room = api.rooms({ id: data!.id });
+  await room.seat.put({ seat: 0 }, me);
+  await room.join.post({}, bob);
+  const bobSocket = await connect(data!.id, bob);
+  await bobSocket.next();
 
-  const res = await requestLink('ana@example.com', me);
-  expect(res.status).toBe(409);
-  expect(await res.json()).toMatchObject({
-    code: 'GUEST_IN_ROOM',
-    roomId: room!.id,
+  expect((await requestLink('ana@example.com', me)).status).toBe(200);
+  expect(sent.at(-1)?.to).toBe('ana@example.com');
+  expect(await bobSocket.next()).toMatchObject({
+    room: {
+      ownerId: bob.id,
+      members: [{ id: bob.id, username: 'bob' }],
+      seats: [null, null, null, null],
+    },
   });
-  expect(sent).toHaveLength(0);
 });
 
-test('a guest who joins a room after asking cannot claim with that link', async () => {
+test('a guest who sat down again after asking claims, and the seat is freed', async () => {
+  const { api, guest, player, requestLink, openLink } = await setup();
+  const me = await guest();
+  const bob = await player('bob');
+  await requestLink('ana@example.com', me);
+  const { data } = await api.rooms.post({}, bob);
+  const room = api.rooms({ id: data!.id });
+  await room.join.post({}, me);
+  await room.seat.put({ seat: 0 }, me);
+
+  const claimed = await openLink('ana@example.com', me);
+  expect((await api.me.get(claimed)).data).toMatchObject({
+    email: 'ana@example.com',
+    room: null,
+  });
+  const { data: after } = await room.join.post({}, bob);
+  expect(after).toMatchObject({
+    members: [{ id: bob.id, username: 'bob' }],
+    seats: [null, null, null, null],
+  });
+});
+
+test('a guest in a running match cannot claim with the link and goes back to their room', async () => {
   const { app, api, sent, guest, requestLink } = await setup();
   const me = await guest();
   await requestLink('ana@example.com', me);
-  const { data: room } = await api.rooms.post({}, me);
+  const { data } = await api.rooms.post({}, me);
+  const room = api.rooms({ id: data!.id });
+  await room.seat.put({ seat: 0 }, me);
+  for (const seat of [1, 2, 3]) await room.bots.post({ seat }, me);
+  await room.start.post({}, me);
 
   const res = await app.handle(new Request(linkIn(sent[0]!), me));
   expect(res.status).toBe(302);
   expect(res.headers.get('location')).toBe(
-    `${webURL}/?error=GUEST_IN_ROOM&room=${room!.id}`,
+    `${webURL}/rooms/${data!.id}?claim=match_running`,
   );
   expect((await api.me.get(me)).data).toMatchObject({
     id: me.id,
     isGuest: true,
+    room: { id: data!.id, matchRunning: true },
   });
 });
 
@@ -163,7 +192,6 @@ test('a merge adds the guest matches, but not a match where both sat', async () 
   const me = await ctx.guest();
   await playMatch(ctx, ana);
   await playMatch(ctx, me);
-  afterCooldown();
   // Ana and her guest at one table, on opposite teams.
   const { data } = await api.rooms.post({}, ana);
   const room = api.rooms({ id: data!.id });

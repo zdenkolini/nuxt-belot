@@ -4,7 +4,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
 import { createAuth, type AuthOptions } from './auth';
 import { claimRoutes } from './claims';
-import { roomRoutes } from './rooms';
+import { createRooms } from './rooms';
 import { createSession } from './session';
 
 export type { Email } from './auth';
@@ -23,7 +23,8 @@ const isUniqueViolation = (e: unknown) =>
 // `bots` lets a room owner seat bots; for testing, never in production.
 export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
   const { db } = options;
-  const auth = createAuth(options);
+  const rooms = await createRooms(db, options.bots ?? false);
+  const auth = createAuth(options, rooms);
   const session = createSession(auth);
 
   return (
@@ -31,7 +32,7 @@ export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
       .use(cors({ origin: options.webURL, credentials: true }))
       .mount(auth.handler)
       .use(session)
-      .use(await roomRoutes(db, session, options.bots ?? false))
+      .use(rooms.routes(session))
       .use(claimRoutes(db, session))
       .get('/health', () => ({ status: 'ok' as const }))
       .get(
@@ -46,7 +47,11 @@ export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
             })
             .from(user)
             .where(eq(user.id, userId));
-          return { ...me!, isGuest: me!.isGuest ?? false };
+          return {
+            ...me!,
+            isGuest: me!.isGuest ?? false,
+            room: await rooms.seated(userId),
+          };
         },
         { auth: true },
       )

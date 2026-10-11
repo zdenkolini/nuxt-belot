@@ -21,6 +21,7 @@ test('a magic link signs the player in without a username', async () => {
     email: 'ana@example.com',
     username: null,
     isGuest: false,
+    room: null,
   });
 });
 
@@ -42,6 +43,7 @@ test('a player picks a username', async () => {
     email: 'ana@example.com',
     username: 'ana',
     isGuest: false,
+    room: null,
   });
 });
 

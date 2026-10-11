@@ -1,15 +1,10 @@
 import { betterAuth } from 'better-auth';
-import {
-  APIError,
-  createAuthMiddleware,
-  getSessionFromCtx,
-} from 'better-auth/api';
+import { createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { anonymous } from 'better-auth/plugins/anonymous';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import * as schema from '@belot/db';
-import { claims, rooms } from '@belot/db';
-import { sql } from 'drizzle-orm';
+import { claims } from '@belot/db';
 import type { Db } from '@belot/db';
 import { countMatches, moveMatches } from './claims';
 
@@ -19,14 +14,13 @@ export type Email = { to: string; subject: string; text: string };
 const guestUsername = () =>
   `guest_${crypto.getRandomValues(new Uint8Array(6)).reduce((name, n) => name + (n % 36).toString(36), '')}`;
 
-// The room the user is a member of, if any.
-const roomOf = async (db: Db, userId: string) => {
-  const [room] = await db
-    .select({ id: rooms.id })
-    .from(rooms)
-    .where(sql`${rooms.members} @> ${JSON.stringify([userId])}::jsonb`)
-    .limit(1);
-  return room?.id;
+// What a claim needs from rooms. Typed here, not from rooms.ts, which
+// depends on the session and so on this file.
+type ClaimRooms = {
+  seated: (
+    userId: string,
+  ) => Promise<{ id: string; matchRunning: boolean } | null>;
+  leaveAll: (userId: string) => Promise<void>;
 };
 
 export type AuthOptions = {
@@ -37,13 +31,10 @@ export type AuthOptions = {
   webURL: string;
 };
 
-export const createAuth = ({
-  db,
-  sendEmail,
-  baseURL,
-  secret,
-  webURL,
-}: AuthOptions) =>
+export const createAuth = (
+  { db, sendEmail, baseURL, secret, webURL }: AuthOptions,
+  rooms: ClaimRooms,
+) =>
   betterAuth({
     database: drizzleAdapter(db, { provider: 'pg', schema }),
     baseURL,
@@ -58,23 +49,21 @@ export const createAuth = ({
       },
     },
     hooks: {
-      // A guest claims only with nothing pending: no room, seat, or match.
-      // Checked when the link is sent and again when it is opened.
+      // A claim takes the guest out of their rooms, when the link is sent and
+      // again when it is opened. Opened during a running match, the guest
+      // goes back to their room and claims after it.
       before: createAuthMiddleware(async (ctx) => {
         const sending = ctx.path === '/sign-in/magic-link';
         if (!sending && ctx.path !== '/magic-link/verify') return;
         const session = await getSessionFromCtx(ctx);
         if (!session?.user.isAnonymous) return;
-        const roomId = await roomOf(db, session.user.id);
-        if (!roomId) return;
-        if (!sending) {
-          throw ctx.redirect(`${webURL}/?error=GUEST_IN_ROOM&room=${roomId}`);
+        const seated = await rooms.seated(session.user.id);
+        if (!sending && seated?.matchRunning) {
+          throw ctx.redirect(
+            `${webURL}/rooms/${seated.id}?claim=match_running`,
+          );
         }
-        throw new APIError('CONFLICT', {
-          code: 'GUEST_IN_ROOM',
-          message: 'Leave your room before you claim your account',
-          roomId,
-        });
+        await rooms.leaveAll(session.user.id);
       }),
     },
     databaseHooks: {

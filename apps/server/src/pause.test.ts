@@ -143,20 +143,12 @@ test('a player who leaves the room mid-match abandons it: it ends for everyone a
   });
 });
 
-test('after an abandon only the leaver has a cooldown before taking a seat', async () => {
+test('after an abandon the leaver can take a seat again at once', async () => {
   const { room, players } = await started();
   await room.leave.post({}, players[1]!);
 
   await room.join.post({}, players[1]!);
-  const { status, error } = await room.seat.put({ seat: 1 }, players[1]!);
-  expect(status).toBe(409);
-  expect(error?.value).toMatchObject({
-    error: 'cooldown',
-    until: expect.any(Date),
-  });
-
-  await room.seat.delete({}, players[0]!);
-  expect((await room.seat.put({ seat: 1 }, players[0]!)).status).toBe(200);
+  expect((await room.seat.put({ seat: 1 }, players[1]!)).status).toBe(200);
 });
 
 test('a socket that closes while it opens still leaves the player missing', async () => {
