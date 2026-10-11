@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { meQuery } from '#lib/account.js';
 	import { api } from '#lib/api.js';
+	import RoomMenu from '#lib/components/room-menu.svelte';
+	import SuitPip from '#lib/components/match/suit-pip.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Card from '#lib/components/ui/card/index.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import type { PublicRoom } from '@belot/server';
-	import Cover from '#lib/components/home-prototype/cover.svelte';
-	import House from '#lib/components/home-prototype/house.svelte';
-	import PrototypeSwitcher from '#lib/components/prototype-switcher.svelte';
 
 	const me = createQuery(() => meQuery);
 	const publicRooms = createQuery(() => ({
@@ -24,6 +22,9 @@
 		refetchInterval: 10_000,
 	}));
 
+	// Home is the closed menu; opened, the left page is the house menu and the
+	// right page lists the public rooms.
+	let open = $state(false);
 	let creating = $state(false);
 
 	const createRoom = async () => {
@@ -32,82 +33,65 @@
 		creating = false;
 		if (data) goto(resolve('/rooms/[id]', { id: data.id }));
 	};
-
-	// PROTOTYPE: home layouts, ?variant=cover|house|old; ?demo adds made-up rooms.
-	const variants = [
-		{ key: 'cover', name: 'Menu cover' },
-		{ key: 'house', name: 'House menu' },
-		{ key: 'old', name: 'Current page' },
-	];
-	const variant = $derived(page.url.searchParams.get('variant') ?? 'cover');
-	const demoRooms: PublicRoom[] = [
-		{ id: 'demo-1', owner: 'marko_bg', targetScore: 701, players: ['marko_bg', 'zoki', 'ivana'] },
-		{ id: 'demo-2', owner: 'ana', targetScore: 501, players: ['ana', 'bane'] },
-		{ id: 'demo-3', owner: 'joca1001', targetScore: 1001, players: ['joca1001'] },
-		{ id: 'demo-4', owner: 'vesna_ns', targetScore: 701, players: ['vesna_ns', 'mile', 'sneki'] },
-		{ id: 'demo-5', owner: 'dule', targetScore: 501, players: ['dule'] },
-		{ id: 'demo-6', owner: 'gaga', targetScore: 1001, players: ['gaga', 'pera', 'laza', 'mika'] },
-	];
-	const rooms = $derived([
-		...(publicRooms.data ?? []),
-		...(page.url.searchParams.has('demo') ? demoRooms : []),
-	]);
-	const props = $derived({
-		rooms,
-		loaded: publicRooms.isSuccess,
-		username: me.data?.username ?? null,
-		creating,
-		oncreate: createRoom,
-	});
 </script>
 
 <svelte:head>
 	<title>{m.app_title()}</title>
 </svelte:head>
 
-<PrototypeSwitcher {variants} />
-{#if variant === 'cover'}
-	<Cover {...props} />
-{:else if variant === 'house'}
-	<House {...props} />
-{:else}
-<main class="flex min-h-svh items-center justify-center p-4">
-	<Card.Root class="w-full max-w-md">
-		<Card.Header>
-			<Card.Title>{m.app_title()}</Card.Title>
-		</Card.Header>
-		<Card.Content class="flex flex-col gap-6">
-			<Button onclick={createRoom} disabled={creating}>{m.create_room()}</Button>
-			<section class="flex flex-col gap-3">
-				<h2 class="font-medium">{m.public_rooms()}</h2>
-				{#if publicRooms.data?.length}
-					<ul class="flex flex-col gap-2">
-						{#each publicRooms.data as room (room.id)}
-							<li class="flex items-center justify-between gap-2 text-sm">
-								<span>
-									{m.room_of({ owner: room.owner ?? '' })} ·
-									{m.free_seats({ count: 4 - room.players.length })} ·
-									{m.target_score_value({ score: room.targetScore })}
-								</span>
-								<Button
-									variant="outline"
-									size="sm"
-									href={resolve('/rooms/[id]', { id: room.id })}>{m.join()}</Button
-								>
-							</li>
-						{/each}
-					</ul>
-				{:else if publicRooms.isSuccess}
-					<p class="text-sm text-muted-foreground">{m.no_public_rooms()}</p>
-				{/if}
-			</section>
-		</Card.Content>
-		{#if me.data?.username}
-			<Card.Footer class="flex justify-between gap-2 text-sm">
-				<span>{m.signed_in_as({ username: me.data.username })}</span>
-				<a class="underline" href={resolve('/account')}>{m.account_link()}</a>
-			</Card.Footer>
-		{/if}
-	</Card.Root>
+<main class="table-skin room grid min-h-svh place-items-center px-3 py-8 text-(--ink) md:px-8">
+	{#if !open}
+		<button
+			type="button"
+			onclick={() => (open = true)}
+			aria-label={m.open_menu()}
+			class="group relative flex aspect-[3/4] w-72 -rotate-[1.5deg] flex-col items-center justify-center gap-5 rounded-[3px] bg-(--oxblood) text-(--card-face) shadow-[0_2px_2px_oklch(0.25_0.08_25/0.3),0_24px_40px_-12px_oklch(0.1_0.05_25/0.7)] transition-transform duration-300 ease-out hover:-translate-y-1 hover:rotate-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--card-face) md:w-80"
+		>
+			<span class="absolute inset-3 rounded-[2px] border border-(--card-face)/35" aria-hidden="true"></span>
+			<span class="flex gap-2" aria-hidden="true">
+				{#each ['spades', 'hearts', 'clubs', 'diamonds'] as const as suit (suit)}
+					<SuitPip {suit} class="size-5" />
+				{/each}
+			</span>
+			<span class="font-hand text-7xl leading-none font-bold">{m.app_title()}</span>
+			<span class="absolute bottom-8 text-xs text-(--card-face)/75 group-hover:text-(--card-face)">
+				{m.open_menu()}
+			</span>
+		</button>
+	{:else}
+		<div
+			class="grid w-full max-w-5xl gap-4 md:grid-cols-[18rem_1fr] md:gap-0"
+			in:fly={{ y: 24, duration: 350, easing: cubicOut }}
+		>
+			<nav
+				class="paper flex flex-col gap-3 px-6 py-6 md:rounded-r-none md:shadow-[inset_-18px_0_24px_-20px_oklch(0.25_0.08_25/0.35),0_1px_1px_oklch(0.25_0.08_25/0.18),0_8px_18px_-6px_oklch(0.25_0.08_25/0.45)]"
+			>
+				<span class="font-hand text-4xl leading-none font-bold">{m.app_title()}</span>
+				<Button onclick={createRoom} disabled={creating}>{m.create_room()}</Button>
+				<ul class="flex flex-col text-sm">
+					{#each [m.ranked_queue(), m.leaderboard()] as label (label)}
+						<li
+							class="flex items-baseline justify-between border-b border-(--paper-rule) py-1.5 text-(--ink-soft)"
+						>
+							{label}<span class="text-xs">{m.coming_soon()}</span>
+						</li>
+					{/each}
+					{#if me.data?.username}
+						<li class="flex items-baseline justify-between py-1.5">
+							<span class="font-semibold">{me.data.username}</span>
+							<a class="text-xs underline underline-offset-2" href={resolve('/account')}>
+								{m.account_link()}
+							</a>
+						</li>
+					{/if}
+				</ul>
+				<Button variant="ghost" size="sm" class="mt-auto self-start" onclick={() => (open = false)}>
+					{m.close_menu()}
+				</Button>
+			</nav>
+			<div class="paper px-6 py-6 md:rounded-l-none">
+				<RoomMenu rooms={publicRooms.data ?? []} loaded={publicRooms.isSuccess} />
+			</div>
+		</div>
+	{/if}
 </main>
-{/if}

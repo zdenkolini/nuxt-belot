@@ -145,7 +145,7 @@ Objects lie a little askew, as if put down by hand: paper panels rotate between 
 
 The world lives behind a skin seam. The cloth, the card back, and the card face are CSS variables on the skin scope, so a host skin (PRODUCT.md: the host picks card face, card back, and table) swaps them without touching components. The silhouette and the chair are the per-player swap point: a player skin later replaces the figure (and its chair) for one seat, not for the table.
 
-**Scope today.** Only the `rooms/[id]` route (room lobby and match table) is in this world. The match table and the room lobby are both in the kafana room. Home, sign-in, username, and account still use the stock shadcn neutral theme on `:root` and are not yet migrated. When they move, they move into the same world under the same rules.
+**Scope today.** Home and the `rooms/[id]` route (room lobby and match table) are in this world. Home is the kafana menu: a closed menu cover in the room that opens to a house page and a page of public rooms. Sign-in, username, and account still use the stock shadcn neutral theme on `:root` and are not yet migrated. When they move, they move into the same world under the same rules.
 
 **Key Characteristics:**
 - A dim kafana room around a tilted wooden table; gingham cloth on the table top only. Nothing is written straight on the cloth.
@@ -291,6 +291,15 @@ Solid oxblood slip with card-face text, 2px corners. Shows only on the player's 
 
 ### Target Score Choice
 Three numbers in Caveat 1.875rem. The chosen one is bold ink with a hand-drawn oxblood circle around it; the others are soft ink and darken on hover (owner only).
+
+### Menu Cover
+Home, closed. A 3:4 oxblood board (`--oxblood`) the size of a real menu (18rem, 20rem on desktop), rotated -1.5deg, with a thin card-face line inset 12px, the four suit pips over the title in Caveat 4.5rem card-face, and "Open the menu" in label size at the bottom. It is one button. Hover straightens it and lifts it 4px (300ms). Its shadow is deeper than paper (`0 24px 40px -12px`), because it is a thick board. The logo is a placeholder until the product has a name.
+
+### Menu Spread
+Home, open. Two paper pages side by side (an 18rem house page and the room page), joined at a spine: the house page carries a soft inset shadow on its right edge, and the inner corners are square. On phone the pages stack. The spread enters with a 24px rise (350ms ease-out). The house page holds Create room (primary), the coming features as quiet "Soon" rows, the player name with the account link, and Close the menu.
+
+### Room Menu
+The public rooms as a kafana menu. A search field (host or player) and a "With a free seat" toggle (oxblood fill when on) sit over sections, one per target score, each headed by a 2px ink rule. A room is a dish: "Room of <host>" in title weight, a dotted leader, and the price (the table's average rating) in Caveat 1.5rem; the seated players and free seats are a label line under it. The whole row is the link; hover fills it with paper shade. Ratings are made up until ranked play exists.
 
 ### Buttons
 Shadcn buttons, re-coloured by the skin.

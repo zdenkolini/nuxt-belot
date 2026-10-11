@@ -1,6 +1,6 @@
 <script lang="ts">
-	// PROTOTYPE: the kafana menu of public rooms. Sections are target scores,
-	// a room is a dish: host as its name, players as ingredients, rating as price.
+	// The kafana menu of public rooms. Sections are target scores; a room is a
+	// dish: the host is its name, the players its ingredients, the rating its price.
 	import { resolve } from '$app/paths';
 	import { targetScores } from '@belot/engine';
 	import type { PublicRoom } from '@belot/server';
@@ -13,7 +13,7 @@
 	let query = $state('');
 	let freeOnly = $state(false);
 
-	// PROTOTYPE: no ratings exist yet; a stable made-up number per username.
+	// No ratings exist yet: a made-up number per username until ranked play.
 	const rating = (name: string) => {
 		let h = 0;
 		for (const c of name) h = (h * 31 + c.charCodeAt(0)) | 0;
