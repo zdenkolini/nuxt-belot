@@ -23,7 +23,8 @@ export type PublicRoom = {
   id: string;
   owner: string | null;
   targetScore: TargetScore;
-  freeSeats: number;
+  // Usernames of the seated players, in seat order.
+  players: (string | null)[];
 };
 
 // Everything the server sends over the room socket.
@@ -223,11 +224,24 @@ export const roomRoutes = async (db: Db, session: Session, bots: boolean) => {
           .innerJoin(user, eq(user.id, rooms.ownerId))
           .where(eq(rooms.isPublic, true))
           .orderBy(rooms.createdAt);
+        const seated = list.flatMap(({ room }) =>
+          room.seats.filter((id) => id !== null),
+        );
+        const names = new Map(
+          (
+            await db
+              .select({ id: user.id, username: user.username })
+              .from(user)
+              .where(inArray(user.id, seated))
+          ).map((u) => [u.id, u.username]),
+        );
         return list.map(({ room, owner }) => ({
           id: room.id,
           owner,
           targetScore: room.targetScore,
-          freeSeats: room.seats.filter((id) => id === null).length,
+          players: room.seats
+            .filter((id) => id !== null)
+            .map((id) => names.get(id) ?? null),
         }));
       },
       { player: true },
