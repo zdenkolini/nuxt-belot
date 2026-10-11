@@ -108,6 +108,14 @@ _Avoid_: Anonymous user, temporary account
 A seated player leaving a running casual match on purpose, which ends the match for everyone at the table.
 _Avoid_: Quit, rage-quit, leave match
 
+**Pause**:
+The state of a running match while a seated player is not connected; play waits until they return or a seated player ends the match.
+_Avoid_: Freeze, hold
+
+**Return**:
+A seated player coming back to their paused match, with the same seat and hand.
+_Avoid_: Resume, rejoin, reconnect
+
 **Cooldown**:
 The time after an abandon during which the player cannot take a seat in any room.
 _Avoid_: Timeout, ban, penalty
@@ -137,7 +145,7 @@ A room that players can join only with its invite link.
 _Avoid_: Closed room, invite-only room
 
 **Spectator**:
-A person in a room who watches play without a seat.
+A person in a room who watches play without a seat; they stop being one when they leave the room, and may watch several rooms at once.
 _Avoid_: Observer, viewer
 
 **Room owner**:
@@ -145,7 +153,7 @@ The player who controls a room: picks the variant, removes players, and starts m
 _Avoid_: Host, admin
 
 **Seat**:
-A fixed position in a room, numbered 0 to 3; seats 0 and 2 form one team, seats 1 and 3 the other.
+A fixed position in a room, numbered 0 to 3; seats 0 and 2 form one team, seats 1 and 3 the other. A player holds at most one seat in all rooms, and keeps it while away from the room until they leave it.
 _Avoid_: Position, slot
 
 **Team** (_par_):
