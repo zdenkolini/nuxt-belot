@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { QueryClientProvider, createQuery } from '@tanstack/svelte-query';
 	import favicon from '#lib/assets/favicon.svg';
-	import { meQuery, queryClient } from '#lib/account.js';
+	import { claimQuery, meQuery, queryClient } from '#lib/account.js';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -14,12 +14,20 @@
 		() => queryClient,
 	);
 
-	// Signed-out players may only sign in; new players must pick a username first.
+	const claim = createQuery(
+		() => ({ ...claimQuery, enabled: !!me.data?.username && !me.data.isGuest }),
+		() => queryClient,
+	);
+
+	// Signed-out players may only sign in; new players must pick a username
+	// first; a claim into an existing account waits for the player's choice.
 	const target = $derived.by(() => {
 		if (me.isPending || me.isError) return null;
 		if (!me.data) return '/sign-in';
 		if (me.data.username === null) return '/username';
-		return page.url.pathname === '/sign-in' || page.url.pathname === '/username'
+		if (claim.data) return '/claim';
+		const path = page.url.pathname;
+		return path === '/sign-in' || path === '/username' || (path === '/claim' && claim.isSuccess)
 			? '/'
 			: null;
 	});
