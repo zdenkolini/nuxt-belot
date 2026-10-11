@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { authClient, meQuery, queryClient } from '#lib/account.js';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -20,6 +21,8 @@
 
 	let email = $state('');
 	let claim = $state<'idle' | 'sending' | 'sent' | 'in_room' | 'failed'>('idle');
+	// The room that blocks the claim, so the guest can go finish there.
+	let blockingRoom = $state<string | null>(null);
 
 	const sendClaimLink = async (event: SubmitEvent) => {
 		event.preventDefault();
@@ -29,6 +32,7 @@
 			callbackURL: `${location.origin}/`,
 		});
 		claim = !error ? 'sent' : error.code === 'GUEST_IN_ROOM' ? 'in_room' : 'failed';
+		blockingRoom = (error as { roomId?: string } | null)?.roomId ?? null;
 	};
 </script>
 
@@ -65,6 +69,11 @@
 									<p class="text-sm text-destructive" role="status">
 										{claim === 'in_room' ? m.guest_in_room() : m.sign_in_failed()}
 									</p>
+								{/if}
+								{#if claim === 'in_room' && blockingRoom}
+									<Button variant="outline" href={resolve('/rooms/[id]', { id: blockingRoom })}>
+										{m.go_to_room()}
+									</Button>
 								{/if}
 								<Button type="submit" disabled={claim === 'sending'}>{m.send_link()}</Button>
 							</form>

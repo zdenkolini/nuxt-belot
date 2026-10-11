@@ -110,9 +110,13 @@
 		notice = null;
 		const { error } = await request;
 		if (!error) return;
-		const value = error.value as { error?: string } | undefined;
+		const value = error.value as { error?: string; until?: Date } | undefined;
 		notice =
-			value?.error === 'match_running'
+			value?.error === 'cooldown'
+				? m.seat_cooldown({
+						time: new Date(value.until!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+					})
+				: value?.error === 'match_running'
 				? m.match_running()
 				: error.status === 409
 					? m.seat_taken()
@@ -192,6 +196,7 @@
 		ondismissscore={() => (dealScore = null)}
 		onplayagain={start}
 		onback={backToRoom}
+		onleave={leaveRoom}
 	>
 		{#snippet chat()}
 			{#if socket}
