@@ -1,20 +1,28 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { api } from '#lib/api.js';
-	import { claimQuery, queryClient } from '#lib/account.js';
-	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Card from '#lib/components/ui/card/index.js';
+	import { claimQuery, meQuery, queryClient } from '#lib/account.js';
+	import Variants from '#lib/components/account-prototype/variants.svelte';
+	import type { Choice } from '#lib/components/account-prototype/types.js';
 	import { m } from '#lib/paraglide/messages.js';
 
+	const me = createQuery(() => meQuery);
 	const claim = createQuery(() => claimQuery);
-	let saving = $state(false);
-	let failed = $state(false);
+	let choosing = $state(false);
+	let chooseFailed = $state(false);
 
-	const choose = async (choice: 'kept_account' | 'merged') => {
-		saving = true;
+	// PROTOTYPE: ?demo shows made-up counts when no claim waits.
+	const shown = $derived(
+		claim.data ??
+			(page.url.searchParams.has('demo') ? { accountMatches: 12, guestMatches: 3 } : null),
+	);
+
+	const choose = async (choice: Choice) => {
+		choosing = true;
 		const { error } = await api.me.claim.post({ choice });
-		saving = false;
-		failed = !!error;
+		choosing = false;
+		chooseFailed = !!error;
 		if (!error) await queryClient.invalidateQueries({ queryKey: claimQuery.queryKey });
 	};
 </script>
@@ -23,24 +31,13 @@
 	<title>{m.claim_choice_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<main class="flex min-h-svh items-center justify-center p-4">
-	<Card.Root class="w-full max-w-sm">
-		<Card.Header>
-			<Card.Title>{m.claim_choice_title()}</Card.Title>
-			<Card.Description>{m.claim_choice_description()}</Card.Description>
-		</Card.Header>
-		{#if claim.data}
-			<Card.Content class="flex flex-col gap-3">
-				<Button disabled={saving} onclick={() => choose('kept_account')}>
-					{m.claim_keep_account({ count: claim.data.accountMatches })}
-				</Button>
-				<Button variant="outline" disabled={saving} onclick={() => choose('merged')}>
-					{m.claim_merge({ count: claim.data.guestMatches })}
-				</Button>
-				{#if failed}
-					<p class="text-sm text-destructive" role="status">{m.claim_choice_failed()}</p>
-				{/if}
-			</Card.Content>
-		{/if}
-	</Card.Root>
-</main>
+<Variants
+	screen="claim"
+	demoLabel="demo claim"
+	me={me.data ?? null}
+	matches={null}
+	claim={shown}
+	{choosing}
+	{chooseFailed}
+	onchoose={choose}
+/>

@@ -27,6 +27,8 @@
 		if (me.data.username === null) return '/username';
 		if (claim.data) return '/claim';
 		const path = page.url.pathname;
+		// PROTOTYPE: ?demo keeps the username and claim screens open to compare designs.
+		if (import.meta.env.DEV && page.url.searchParams.has('demo')) return null;
 		return path === '/sign-in' || path === '/username' || (path === '/claim' && claim.isSuccess)
 			? '/'
 			: null;
