@@ -299,7 +299,7 @@ Home, closed. A 3:4 oxblood board (`--oxblood`) the size of a real menu (18rem, 
 Home, open. Two paper pages side by side (an 18rem house page and the room page), joined at a spine: the house page carries a soft inset shadow on its right edge, and the inner corners are square. On phone the pages stack. The spread enters with a 24px rise (350ms ease-out). The house page holds Create room (primary), the coming features as quiet "Soon" rows, the player name with the account link, and Close the menu.
 
 ### Room Menu
-The public rooms as a kafana menu. A search field (host or player) and a "With a free seat" toggle (oxblood fill when on) sit over sections, one per target score, each headed by a 2px ink rule. A room is a dish: "Room of <host>" in title weight, a dotted leader, and the price (the table's average rating) in Caveat 1.5rem; the seated players and free seats are a label line under it. The whole row is the link; hover fills it with paper shade. Ratings are made up until ranked play exists.
+The public rooms as a kafana menu. A search field (room owner or player) and a "With a free seat" toggle (oxblood fill when on) sit over sections, one per target score, each headed by a 2px ink rule. A room is a dish: "Room of <room owner>" in title weight, a dotted leader, and the price (the table's average rating) in Caveat 1.5rem; the seated players and free seats are a label line under it. The whole row is the link; hover fills it with paper shade. Ratings are made up until ranked play exists.
 
 ### Buttons
 Shadcn buttons, re-coloured by the skin.
