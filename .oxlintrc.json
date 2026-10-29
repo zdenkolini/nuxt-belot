@@ -10,7 +10,10 @@
       "error",
       {
         "patterns": [
-          { "group": ["./*", "../*"], "message": "Use the #src/* or #lib/* alias." },
+          {
+            "group": ["./*", "../*"],
+            "message": "Use the #src/* or #lib/* alias."
+          },
           { "regex": "^#.*\\.js$", "message": "Drop the .js extension." }
         ]
       }
