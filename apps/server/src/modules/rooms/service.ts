@@ -1,10 +1,11 @@
 import assert from 'node:assert';
 import { rooms, user, type Db } from '@belot/db';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { TargetScore } from '@belot/engine';
 import { botIds, botMove, createBots, isBot } from '#src/bots';
 import { createChat } from '#src/chat';
-import { holdsUser } from '#src/modules/account/service';
+import { holdsUser, usernames } from '#src/modules/account/service';
+import { createMatches, MatchRejected } from '#src/modules/matches/service';
 import type { Settings } from '#src/modules/rooms/model';
 import type { SocketHandlers } from '#src/modules/sockets/index';
 import type {
@@ -12,7 +13,6 @@ import type {
   Socket,
   Sockets,
 } from '#src/modules/sockets/service';
-import { createPlay } from '#src/play';
 import { Conflict, Forbidden, HttpError, NotFound } from '#src/plugins/errors';
 
 export type Room = typeof rooms.$inferSelect;
@@ -106,27 +106,17 @@ export const seatedPlayers = (room: { seats: (string | null)[] }) => {
   return players;
 };
 
-const usernames = async (db: Db, ids: string[]) =>
-  new Map(
-    (
-      await db
-        .select({ id: user.id, username: user.username })
-        .from(user)
-        .where(inArray(user.id, ids))
-    ).map((u) => [u.id, u.username]),
-  );
-
 export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
   if (bots) await createBots(db);
   const chat = createChat(sockets);
-  const play = await createPlay(db, sockets.connected);
+  const matches = await createMatches(db, sockets.connected);
 
   // A bot whose turn it is plays after a short pause, and so on, until a
   // person is to play or the match is paused or over.
   const thinking = new Set<string>();
   const runBots = (roomId: string) => {
     if (!bots || thinking.has(roomId)) return;
-    const turn = [...play.viewsOf(roomId)].find(
+    const turn = [...matches.viewsOf(roomId)].find(
       ([userId, message]) =>
         isBot(userId) &&
         message.type === 'match' &&
@@ -139,11 +129,13 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
       thinking.delete(roomId);
       const [userId, message] = turn;
       if (message.type !== 'match') return;
-      const done = await play.move(
-        { roomId, userId },
-        botMove(message.match.legalMoves),
-      );
-      if (done.ok) sendMatch(roomId, done.views);
+      const move = botMove(message.match.legalMoves);
+      try {
+        sendMatch(roomId, await matches.move({ roomId, userId }, move));
+      } catch (e) {
+        // The match may have paused meanwhile.
+        if (!(e instanceof MatchRejected)) throw e;
+      }
     }, 700);
   };
 
@@ -211,7 +203,7 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
     });
 
   const assertNoMatch = (room: Room) => {
-    if (play.isRunning(room.id)) throw new Conflict('match_running');
+    if (matches.isRunning(room.id)) throw new Conflict('match_running');
   };
 
   const roomsWith = (
@@ -231,8 +223,8 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
 
   // Leaving a match still in play abandons it.
   const leaveRoom = async (id: string, userId: string) => {
-    if (play.seatOf({ roomId: id, userId }) !== undefined) {
-      sendMatch(id, await play.abandon({ roomId: id, userId }));
+    if (matches.seatOf({ roomId: id, userId }) !== undefined) {
+      sendMatch(id, await matches.abandon({ roomId: id, userId }));
     }
     await update(id, (room) => {
       assertMember(room, userId);
@@ -242,12 +234,16 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
   };
 
   // A rejected move or end goes back to the socket that sent it.
-  const answer = (
+  const answer = async (
     socket: Socket,
-    done: Awaited<ReturnType<typeof play.move | typeof play.end>>,
+    done: Promise<Map<string, RoomMessage>>,
   ) => {
-    if (done.ok) sendMatch(socket.roomId, done.views);
-    else socket.send({ type: 'match.rejected', reason: done.reason });
+    try {
+      sendMatch(socket.roomId, await done);
+    } catch (e) {
+      if (!(e instanceof MatchRejected)) throw e;
+      socket.send({ type: 'match.rejected', reason: e.code });
+    }
   };
 
   const socketHandlers: SocketHandlers = {
@@ -258,20 +254,20 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
     },
     opened: (socket) => {
       // A seated player coming back may end the pause for everyone.
-      if (play.seatOf(socket) !== undefined) {
-        sendMatch(socket.roomId, play.viewsOf(socket.roomId));
+      if (matches.seatOf(socket) !== undefined) {
+        sendMatch(socket.roomId, matches.viewsOf(socket.roomId));
         return;
       }
-      const match = play.viewFor(socket);
+      const match = matches.viewFor(socket);
       if (match) socket.send(match);
     },
-    move: async (socket, move) => answer(socket, await play.move(socket, move)),
-    end: async (socket) => answer(socket, await play.end(socket)),
+    move: (socket, move) => answer(socket, matches.move(socket, move)),
+    end: (socket) => answer(socket, matches.end(socket)),
     chat: chat.handle,
     lastClosed: async (member) => {
       // A seated player gone pauses the match for everyone.
-      if (play.seatOf(member) !== undefined) {
-        sockets.sendEach(member.roomId, play.viewsOf(member.roomId));
+      if (matches.seatOf(member) !== undefined) {
+        sockets.sendEach(member.roomId, matches.viewsOf(member.roomId));
         return;
       }
       // A spectator is in a room only while connected to it.
@@ -335,7 +331,7 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
 
     takeSeat: async (id: string, userId: string, seat: number) => {
       const elsewhere = await seatedElsewhere(userId, id);
-      if (elsewhere && play.isRunning(elsewhere.id)) {
+      if (elsewhere && matches.isRunning(elsewhere.id)) {
         throw new Conflict('seated_in_match');
       }
       const room = await update(id, (room) => {
@@ -400,7 +396,10 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
       });
       assert(room);
       const { targetScore } = room;
-      sendMatch(id, await play.start(id, seatedPlayers(room), { targetScore }));
+      sendMatch(
+        id,
+        await matches.start(id, seatedPlayers(room), { targetScore }),
+      );
       return { started: true };
     },
 
@@ -414,7 +413,7 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
         id: room.id,
         owner: names.get(room.ownerId) ?? null,
         seatsFilled: room.seats.filter((id) => id !== null).length,
-        matchRunning: play.isRunning(room.id),
+        matchRunning: matches.isRunning(room.id),
       };
     },
 

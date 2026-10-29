@@ -1,5 +1,5 @@
 import type { ChatServerMessage } from '#src/chat';
-import type { MatchMessage } from '#src/play';
+import type { MatchMessage } from '#src/modules/matches/service';
 import type { Member } from '#src/plugins/session';
 import type { RoomView } from '#src/modules/rooms/service';
 
