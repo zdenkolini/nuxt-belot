@@ -2,7 +2,10 @@ import assert from 'node:assert';
 import { matches as matchesTable, moves, type Db } from '@belot/db';
 import {
   belot,
+  belotDeck,
   replay,
+  suits,
+  targetScores,
   type BelotEvent,
   type BelotMove,
   type BelotResult,
@@ -82,6 +85,18 @@ export const seatFor = (players: Player[], userId: string) => {
   return seat;
 };
 
+const belotMoves: BelotMove[] = [
+  { type: 'pass' },
+  ...suits.map((suit) => ({ type: 'call' as const, suit })),
+  ...belotDeck().map((card) => ({ type: 'play' as const, card })),
+];
+
+export const isBelotMove = (value: unknown): value is BelotMove =>
+  belotMoves.some((move) => Bun.deepEquals(move, value));
+
+export const isBelotVariant = (value: unknown): value is BelotVariant =>
+  targetScores.some((targetScore) => Bun.deepEquals({ targetScore }, value));
+
 export const turnOf = (state: BelotState) =>
   seats.find((seat) => belot.legalMoves(state, seat).length > 0) ?? null;
 
@@ -99,12 +114,17 @@ const playersOf = async (db: Db, ids: string[]) => {
 // The matches table holds any ruleset, so its variant and moves are untyped;
 // only belot is saved.
 const rebuild = async (db: Db, saved: typeof matchesTable.$inferSelect) => {
-  const log = (await db
+  const rows = await db
     .select({ seat: moves.seat, move: moves.move })
     .from(moves)
     .where(eq(moves.matchId, saved.id))
-    .orderBy(asc(moves.index))) as Logged<BelotMove>[];
-  const variant = saved.variant as BelotVariant;
+    .orderBy(asc(moves.index));
+  const log = rows.map(({ seat, move }): Logged<BelotMove> => {
+    assert(isSeat(seat) && isBelotMove(move));
+    return { seat, move };
+  });
+  const { variant } = saved;
+  assert(isBelotVariant(variant));
   const rebuilt = replay(belot, variant, saved.seed, log);
   if (!rebuilt.ok) throw new Error(`match ${saved.id}: ${rebuilt.reason}`);
   return {
@@ -244,10 +264,11 @@ export const createMatches = async (
       if (belot.legalMoves(match.state, seat).length === 0) {
         throw new MatchRejected('not_your_turn');
       }
-      const applied = belot.apply(match.state, seat, move as BelotMove);
+      if (!isBelotMove(move)) throw new MatchRejected('illegal_move');
+      const applied = belot.apply(match.state, seat, move);
       if (!applied.ok) throw new MatchRejected('illegal_move');
       match.state = applied.state;
-      match.log.push({ seat, move: move as BelotMove });
+      match.log.push({ seat, move });
       await db.insert(moves).values({
         matchId: match.id,
         index: match.log.length - 1,
