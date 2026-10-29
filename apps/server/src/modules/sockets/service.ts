@@ -1,7 +1,7 @@
 import type { ChatServerMessage } from '#src/chat';
 import type { MatchMessage } from '#src/play';
 import type { Member } from '#src/plugins/session';
-import type { RoomView } from '#src/rooms';
+import type { RoomView } from '#src/modules/rooms/service';
 
 // Everything the server sends over the room socket.
 export type RoomMessage =

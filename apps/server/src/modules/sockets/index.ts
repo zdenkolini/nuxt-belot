@@ -1,10 +1,10 @@
 import { Elysia } from 'elysia';
 import type { ChatIntent } from '#src/chat';
-import { roomParams } from '#src/modules/sockets/model';
+import { roomParams } from '#src/modules/rooms/model';
 import type { Socket, Sockets } from '#src/modules/sockets/service';
 import type { MatchIntent } from '#src/play';
 import type { Member, Session } from '#src/plugins/session';
-import type { RoomView } from '#src/rooms';
+import type { RoomView } from '#src/modules/rooms/service';
 
 export type SocketHandlers = {
   // The room as its members see it; undefined when the user is not one.

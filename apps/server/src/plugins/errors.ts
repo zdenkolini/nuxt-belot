@@ -1,4 +1,4 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 
 type ErrorStatus = 403 | 404 | 409 | 429;
 
@@ -36,6 +36,9 @@ export class TooManyRequests<
     super(429, code);
   }
 }
+
+export const errorBody = <const Code extends string>(code: Code) =>
+  t.Object({ error: t.Literal(code) });
 
 // Elysia's own errors and a thrown `status()` keep their responses: routes
 // not yet moved to typed errors, and the web side, rely on them.

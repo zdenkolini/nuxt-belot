@@ -1,7 +1,5 @@
 import { t } from 'elysia';
-
-const errorBody = <const Code extends string>(code: Code) =>
-  t.Object({ error: t.Literal(code) });
+import { errorBody } from '#src/plugins/errors';
 
 export const usernameBody = t.Object({
   username: t.String({

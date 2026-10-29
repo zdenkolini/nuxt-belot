@@ -13,11 +13,13 @@ import {
   setUsername,
 } from '#src/modules/account/service';
 import type { Session } from '#src/plugins/session';
-import type { createRooms } from '#src/rooms';
+import type { Rooms } from '#src/modules/rooms/service';
 
-type Rooms = Pick<Awaited<ReturnType<typeof createRooms>>, 'seated'>;
-
-export const accountRoutes = (db: Db, session: Session, rooms: Rooms) =>
+export const accountRoutes = (
+  db: Db,
+  session: Session,
+  rooms: Pick<Rooms, 'seated'>,
+) =>
   new Elysia({ prefix: '/me' })
     .use(session)
     .get(
