@@ -1,9 +1,10 @@
 import { rooms, user, type Db } from '@belot/db';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
 import { botIds, botMove, createBots, isBot } from '#src/bots';
 import { createChat } from '#src/chat';
+import { holdsUser } from '#src/modules/account/service';
 import type { SocketHandlers } from '#src/modules/sockets/index';
 import type {
   RoomMessage,
@@ -181,11 +182,7 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
   const roomsWith = (
     column: typeof rooms.seats | typeof rooms.members,
     userId: string,
-  ) =>
-    db
-      .select()
-      .from(rooms)
-      .where(sql`${column} @> ${JSON.stringify([userId])}::jsonb`);
+  ) => db.select().from(rooms).where(holdsUser(column, userId));
 
   // The room where the user holds a seat; a player holds at most one.
   const seatedRoom = async (userId: string) =>
