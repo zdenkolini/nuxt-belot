@@ -6,7 +6,7 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import * as schema from '@belot/db';
 import { claims } from '@belot/db';
 import type { Db } from '@belot/db';
-import { countMatches, moveMatches } from '#src/claims';
+import { countMatches, moveMatches } from '#src/modules/account/service';
 
 export type Email = { to: string; subject: string; text: string };
 
