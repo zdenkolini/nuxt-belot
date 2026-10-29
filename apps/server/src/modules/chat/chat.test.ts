@@ -1,4 +1,6 @@
+import assert from 'node:assert';
 import { expect, test } from 'bun:test';
+import { chatText, isChatIntent } from '#src/modules/chat/service';
 import { nextOf, setup } from '#src/test/setup';
 
 // Ana's room with Bob and Cara in it, each with an open room socket.
@@ -8,17 +10,18 @@ const chatRoom = async () => {
   const bob = await ctx.player('bob');
   const cara = await ctx.player('cara');
   const { data: room } = await ctx.api.rooms.post({}, ana);
-  await ctx.api.rooms({ id: room!.id }).join.post({}, bob);
-  await ctx.api.rooms({ id: room!.id }).join.post({}, cara);
+  assert(room);
+  await ctx.api.rooms({ id: room.id }).join.post({}, bob);
+  await ctx.api.rooms({ id: room.id }).join.post({}, cara);
   const open = async (session: typeof ana) => {
-    const socket = await ctx.connect(room!.id, session);
+    const socket = await ctx.connect(room.id, session);
     await socket.next();
     const send = (message: object) => socket.ws.send(JSON.stringify(message));
     return { ...socket, send };
   };
   return {
     ...ctx,
-    roomId: room!.id,
+    roomId: room.id,
     ana: { ...ana, socket: await open(ana) },
     bob: { ...bob, socket: await open(bob) },
     cara: { ...cara, socket: await open(cara) },
@@ -113,4 +116,32 @@ test('a message sent as soon as the room socket opens is not lost', async () => 
   expect(await nextOf(tab, 'chat.history')).toMatchObject({
     messages: [{ from: ana.id, text: 'early' }],
   });
+});
+
+test('chat text is trimmed, and empty or too long text is dropped', () => {
+  expect(chatText('  good luck  ')).toBe('good luck');
+  expect(chatText('   ')).toBeUndefined();
+  expect(chatText('a'.repeat(500))).toHaveLength(500);
+  expect(chatText('a'.repeat(501))).toBeUndefined();
+});
+
+test('only well-formed chat intents go to chat', () => {
+  for (const intent of [
+    { type: 'chat.send', text: 'hi' },
+    { type: 'chat.mute', userId: 'u' },
+    { type: 'chat.unmute', userId: 'u' },
+    { type: 'chat.history' },
+  ])
+    expect(isChatIntent(intent)).toBe(true);
+  for (const intent of [
+    null,
+    {},
+    { type: 'chat.other' },
+    { type: 'match.end' },
+    { type: 'chat.send' },
+    { type: 'chat.send', text: {} },
+    { type: 'chat.mute' },
+    { type: 'chat.unmute', userId: 5 },
+  ])
+    expect(isChatIntent(intent)).toBe(false);
 });

@@ -20,8 +20,29 @@ export type ChatIntent =
   | { type: 'chat.unmute'; userId: string }
   | { type: 'chat.history' };
 
+export const isChatIntent = (
+  intent: { type?: unknown; text?: unknown; userId?: unknown } | null,
+): intent is ChatIntent => {
+  switch (intent?.type) {
+    case 'chat.history':
+      return true;
+    case 'chat.send':
+      return typeof intent.text === 'string';
+    case 'chat.mute':
+    case 'chat.unmute':
+      return typeof intent.userId === 'string';
+  }
+  return false;
+};
+
 const maxLength = 500;
 const historyLength = 100;
+
+export const chatText = (text: string) => {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > maxLength) return undefined;
+  return trimmed;
+};
 
 // Chat lives in memory, by room. Mutes are per player and per room, and only
 // filter what the muting player receives.
@@ -46,28 +67,39 @@ export const createChat = (sockets: Sockets) => {
     };
   };
 
-  const handle = (socket: Socket, intent: ChatIntent) => {
+  const post = (socket: Socket, text: string) => {
     const { roomId, userId: from } = socket;
-    if (intent.type === 'chat.history')
-      return socket.send(history(roomId, from));
-    if (intent.type === 'chat.send') {
-      const text = String(intent.text).trim();
-      if (!text || text.length > maxLength) return;
-      const message = { id: crypto.randomUUID(), from, text, at: Date.now() };
-      const log = logs.get(roomId) ?? [];
-      logs.set(roomId, [...log, message].slice(-historyLength));
-      const hearing = [...sockets.connected(roomId)].filter(
-        (id) => !mutedBy(roomId, id).has(from),
-      );
-      const sent: ChatServerMessage = { type: 'chat.message', message };
-      sockets.sendEach(roomId, new Map(hearing.map((id) => [id, sent])));
-      return;
+    const clean = chatText(text);
+    if (!clean) return;
+    const message = {
+      id: crypto.randomUUID(),
+      from,
+      text: clean,
+      at: Date.now(),
+    };
+    const log = logs.get(roomId) ?? [];
+    logs.set(roomId, [...log, message].slice(-historyLength));
+    const hearing = [...sockets.connected(roomId)].filter(
+      (id) => !mutedBy(roomId, id).has(from),
+    );
+    const sent: ChatServerMessage = { type: 'chat.message', message };
+    sockets.sendEach(roomId, new Map(hearing.map((id) => [id, sent])));
+  };
+
+  const handle = (socket: Socket, intent: ChatIntent) => {
+    const { roomId, userId } = socket;
+    switch (intent.type) {
+      case 'chat.history':
+        return socket.send(history(roomId, userId));
+      case 'chat.send':
+        return post(socket, intent.text);
+      case 'chat.mute':
+        mutedBy(roomId, userId).add(intent.userId);
+        return sockets.sendTo(socket, history(roomId, userId));
+      case 'chat.unmute':
+        mutedBy(roomId, userId).delete(intent.userId);
+        return sockets.sendTo(socket, history(roomId, userId));
     }
-    const muted = mutedBy(roomId, from);
-    if (intent.type === 'chat.mute') muted.add(intent.userId);
-    else if (intent.type === 'chat.unmute') muted.delete(intent.userId);
-    else return;
-    sockets.sendTo(socket, history(roomId, from));
   };
 
   // Drops a room's chat once the room is gone.
