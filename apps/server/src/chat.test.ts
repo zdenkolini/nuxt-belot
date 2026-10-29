@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { nextOf, setup } from '#src/test-setup';
+import { nextOf, setup } from '#src/test/setup';
 
 // Ana's room with Bob and Cara in it, each with an open room socket.
 const chatRoom = async () => {

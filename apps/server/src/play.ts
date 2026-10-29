@@ -13,7 +13,7 @@ import {
 } from '@belot/engine';
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { isBot } from '#src/bots';
-import type { Member } from '#src/session';
+import type { Member } from '#src/plugins/session';
 
 // What one seat sees of the match. `players` are by seat, also those who
 // left the room. `events` are those of the last move. `missing` holds the user ids of seated players who are not connected; the

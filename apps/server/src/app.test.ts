@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { baseURL, linkIn, setup, webURL } from '#src/test-setup';
+import { baseURL, linkIn, setup, webURL } from '#src/test/setup';
 
 test('health endpoint reports ok', async () => {
   const { api } = await setup();

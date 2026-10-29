@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import type { createAuth } from '#src/auth';
+import type { createAuth } from '#src/plugins/auth';
 
 // `{ auth: true }` on a route rejects requests without a session and gives
 // the handler the signed-in `userId`. `{ player: true }` also rejects users
