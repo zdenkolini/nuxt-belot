@@ -1,5 +1,5 @@
 import { createDb } from '@belot/db';
-import { createApp } from './app';
+import { createApp } from '#src/app';
 
 const app = await createApp({
   db: await createDb(process.env.DATA_DIR ?? '.data'),

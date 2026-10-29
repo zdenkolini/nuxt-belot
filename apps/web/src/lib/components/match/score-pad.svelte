@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { Suit, Team, TeamPoints } from '@belot/engine';
-  import { m } from '#lib/paraglide/messages.js';
-  import { isRed, suitNames } from './cards.js';
-  import SuitPip from './suit-pip.svelte';
+  import { m } from '#lib/paraglide/messages';
+  import { isRed, suitNames } from '#lib/components/match/cards';
+  import SuitPip from '#lib/components/match/suit-pip.svelte';
 
   let {
     target,

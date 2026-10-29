@@ -1,7 +1,7 @@
 import { afterEach } from 'bun:test';
 import { treaty } from '@elysiajs/eden';
 import { createDb, type Db } from '@belot/db';
-import { createApp, type Email, type RoomMessage } from './app';
+import { createApp, type Email, type RoomMessage } from '#src/app';
 
 export const baseURL = 'http://localhost:3000';
 export const webURL = 'http://localhost:5173';

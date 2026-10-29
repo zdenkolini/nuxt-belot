@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
   import Scissors from '@lucide/svelte/icons/scissors';
   import SuitPip from '#lib/components/match/suit-pip.svelte';
-  import { m } from '#lib/paraglide/messages.js';
+  import { m } from '#lib/paraglide/messages';
 
   // A letter from the kafana on its letterhead, signed by the house. The
   // reply, if any, is a slip below a dashed cut line.

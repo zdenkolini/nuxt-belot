@@ -1,7 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import"],
-  "options": { "typeAware": true },
+  "options": {
+    "typeAware": true
+  },
   "rules": {
     "typescript/no-non-null-assertion": "warn",
     "typescript/no-unsafe-type-assertion": "warn",
@@ -11,10 +13,13 @@
       {
         "patterns": [
           {
-            "group": ["./*", "../*"],
+            "group": ["./*", "../*", "!./$types", "!./*.css"],
             "message": "Use the #src/* or #lib/* alias."
           },
-          { "regex": "^#.*\\.js$", "message": "Drop the .js extension." }
+          {
+            "regex": "^#.*\\.js$",
+            "message": "Drop the .js extension."
+          }
         ]
       }
     ]

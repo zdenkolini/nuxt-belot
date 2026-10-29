@@ -2,10 +2,10 @@ import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
-import { botIds, botMove, createBots, isBot } from './bots';
-import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
-import { createPlay, type MatchIntent, type MatchMessage } from './play';
-import type { Member, Session } from './session';
+import { botIds, botMove, createBots, isBot } from '#src/bots';
+import { createChat, type ChatIntent, type ChatServerMessage } from '#src/chat';
+import { createPlay, type MatchIntent, type MatchMessage } from '#src/play';
+import type { Member, Session } from '#src/session';
 
 type Room = typeof rooms.$inferSelect;
 

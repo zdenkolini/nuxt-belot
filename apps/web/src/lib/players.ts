@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 // The username of the player with this id, from room members or match players.
 export const usernameIn = (

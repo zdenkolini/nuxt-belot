@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Card } from '@belot/engine';
-  import { cardName, isRed, rankNames } from './cards.js';
-  import SuitPip from './suit-pip.svelte';
+  import { cardName, isRed, rankNames } from '#lib/components/match/cards';
+  import SuitPip from '#lib/components/match/suit-pip.svelte';
 
   let {
     card,

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { authClient, meQuery, queryClient } from '#lib/account.js';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import * as Card from '#lib/components/ui/card/index.js';
-  import { Input } from '#lib/components/ui/input/index.js';
-  import { Label } from '#lib/components/ui/label/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { authClient, meQuery, queryClient } from '#lib/account';
+  import { Button } from '#lib/components/ui/button';
+  import * as Card from '#lib/components/ui/card';
+  import { Input } from '#lib/components/ui/input';
+  import { Label } from '#lib/components/ui/label';
+  import { m } from '#lib/paraglide/messages';
 
   let email = $state('');
   let status = $state<'idle' | 'sending' | 'sent' | 'failed'>('idle');

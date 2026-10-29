@@ -1,9 +1,9 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query';
-  import { api } from '#lib/api.js';
-  import { claimQuery, queryClient } from '#lib/account.js';
+  import { api } from '#lib/api';
+  import { claimQuery, queryClient } from '#lib/account';
   import KafanaLetter from '#lib/components/kafana-letter.svelte';
-  import { m } from '#lib/paraglide/messages.js';
+  import { m } from '#lib/paraglide/messages';
 
   const claim = createQuery(() => claimQuery);
   let choosing = $state(false);

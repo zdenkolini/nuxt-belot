@@ -5,8 +5,8 @@
   import { targetScores } from '@belot/engine';
   import type { PublicRoom } from '@belot/server';
   import Search from '@lucide/svelte/icons/search';
-  import { Input } from '#lib/components/ui/input/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { Input } from '#lib/components/ui/input';
+  import { m } from '#lib/paraglide/messages';
 
   let { rooms, loaded }: { rooms: PublicRoom[]; loaded: boolean } = $props();
 

@@ -12,17 +12,17 @@
     type Trick,
   } from '@belot/engine';
   import type { MatchView, RoomView } from '@belot/server';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import * as Card from '#lib/components/ui/card/index.js';
-  import * as Dialog from '#lib/components/ui/dialog/index.js';
-  import { m } from '#lib/paraglide/messages.js';
-  import { isRed, receive, send, sortHand, suitNames, sweep } from './cards.js';
-  import ChairFigure from './chair-figure.svelte';
-  import DealScoreTable from './deal-score.svelte';
-  import Declarations from './declarations.svelte';
-  import PlayingCard from './playing-card.svelte';
-  import ScorePad from './score-pad.svelte';
-  import SuitPip from './suit-pip.svelte';
+  import { Button } from '#lib/components/ui/button';
+  import * as Card from '#lib/components/ui/card';
+  import * as Dialog from '#lib/components/ui/dialog';
+  import { m } from '#lib/paraglide/messages';
+  import { isRed, receive, send, sortHand, suitNames, sweep } from '#lib/components/match/cards';
+  import ChairFigure from '#lib/components/match/chair-figure.svelte';
+  import DealScoreTable from '#lib/components/match/deal-score.svelte';
+  import Declarations from '#lib/components/match/declarations.svelte';
+  import PlayingCard from '#lib/components/match/playing-card.svelte';
+  import ScorePad from '#lib/components/match/score-pad.svelte';
+  import SuitPip from '#lib/components/match/suit-pip.svelte';
 
   let {
     match,

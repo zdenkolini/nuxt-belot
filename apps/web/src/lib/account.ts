@@ -1,7 +1,7 @@
 import { QueryClient, queryOptions } from '@tanstack/svelte-query';
 import { createAuthClient } from 'better-auth/client';
 import { anonymousClient, magicLinkClient } from 'better-auth/client/plugins';
-import { api, apiURL } from '#lib/api.js';
+import { api, apiURL } from '#lib/api';
 
 export const authClient = createAuthClient({
   baseURL: apiURL,

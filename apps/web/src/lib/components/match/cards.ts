@@ -1,7 +1,7 @@
 import { cubicIn } from 'svelte/easing';
 import { crossfade, fade } from 'svelte/transition';
 import { ranks, suits, type Card, type Rank, type Suit } from '@belot/engine';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 export const suitNames: Record<Suit, () => string> = {
   clubs: m.suit_clubs,

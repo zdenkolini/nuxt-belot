@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { matches, type Db } from '@belot/db';
 import type { BelotMove, Declaration } from '@belot/engine';
 import { desc } from 'drizzle-orm';
-import { nextOf, send, table } from './test-setup';
+import { nextOf, send, table } from '#src/test-setup';
 
 type PlayMove = Extract<BelotMove, { type: 'play' }>;
 

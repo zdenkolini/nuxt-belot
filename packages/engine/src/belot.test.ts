@@ -10,7 +10,7 @@ import {
   type Suit,
   type TargetScore,
   type Team,
-} from './index';
+} from '#src/index';
 
 const variant = { targetScore: 501 } as const;
 const seats = [0, 1, 2, 3] as const;

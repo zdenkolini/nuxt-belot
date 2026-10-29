@@ -1,9 +1,9 @@
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import * as schema from './schema';
+import * as schema from '#src/schema';
 
-export * from './schema';
+export * from '#src/schema';
 
 // No dataDir gives an in-memory database.
 export const createDb = async (dataDir?: string) => {

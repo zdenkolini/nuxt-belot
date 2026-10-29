@@ -2,15 +2,15 @@ import { cors } from '@elysiajs/cors';
 import { matches, user } from '@belot/db';
 import { desc, eq, sql } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
-import { createAuth, type AuthOptions } from './auth';
-import { claimRoutes } from './claims';
-import { createRooms } from './rooms';
-import { createSession } from './session';
+import { createAuth, type AuthOptions } from '#src/auth';
+import { claimRoutes } from '#src/claims';
+import { createRooms } from '#src/rooms';
+import { createSession } from '#src/session';
 
-export type { Email } from './auth';
-export type { ChatIntent, ChatMessage } from './chat';
-export type { MatchIntent, MatchView, MoveRejection } from './play';
-export type { PublicRoom, RoomMessage, RoomView } from './rooms';
+export type { Email } from '#src/auth';
+export type { ChatIntent, ChatMessage } from '#src/chat';
+export type { MatchIntent, MatchView, MoveRejection } from '#src/play';
+export type { PublicRoom, RoomMessage, RoomView } from '#src/rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 

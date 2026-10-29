@@ -1,6 +1,6 @@
 <script lang="ts">
   import UsernameForm from '#lib/components/username-form.svelte';
-  import { m } from '#lib/paraglide/messages.js';
+  import { m } from '#lib/paraglide/messages';
 
   let typed = $state('');
 </script>

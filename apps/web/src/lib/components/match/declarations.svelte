@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { BelotView, Declaration, Seat, Team } from '@belot/engine';
-  import { m } from '#lib/paraglide/messages.js';
-  import { isRed, rankNames } from './cards.js';
-  import SuitPip from './suit-pip.svelte';
+  import { m } from '#lib/paraglide/messages';
+  import { isRed, rankNames } from '#lib/components/match/cards';
+  import SuitPip from '#lib/components/match/suit-pip.svelte';
 
   let {
     view,

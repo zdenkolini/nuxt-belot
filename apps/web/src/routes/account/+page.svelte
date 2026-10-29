@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { createQuery } from '@tanstack/svelte-query';
-  import { meQuery } from '#lib/account.js';
-  import { api } from '#lib/api.js';
+  import { meQuery } from '#lib/account';
+  import { api } from '#lib/api';
   import ClaimForm from '#lib/components/claim-form.svelte';
   import KafanaLetter from '#lib/components/kafana-letter.svelte';
   import SignOut from '#lib/components/sign-out.svelte';
   import UsernameForm from '#lib/components/username-form.svelte';
-  import { m } from '#lib/paraglide/messages.js';
+  import { m } from '#lib/paraglide/messages';
 
   const me = createQuery(() => meQuery);
   const matches = createQuery(() => ({

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DealScore, Team, TeamPoints } from '@belot/engine';
-  import { m } from '#lib/paraglide/messages.js';
+  import { m } from '#lib/paraglide/messages';
 
   let { score, myTeam }: { score: DealScore; myTeam: Team } = $props();
 

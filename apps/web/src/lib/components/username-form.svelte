@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { api } from '#lib/api.js';
-  import { meQuery, queryClient } from '#lib/account.js';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import { Input } from '#lib/components/ui/input/index.js';
-  import { Label } from '#lib/components/ui/label/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { api } from '#lib/api';
+  import { meQuery, queryClient } from '#lib/account';
+  import { Button } from '#lib/components/ui/button';
+  import { Input } from '#lib/components/ui/input';
+  import { Label } from '#lib/components/ui/label';
+  import { m } from '#lib/paraglide/messages';
 
   // Bindable, so a page can show the name as it is typed.
   let { username = $bindable('') }: { username?: string } = $props();

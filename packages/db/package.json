@@ -17,5 +17,8 @@
     "@types/bun": "catalog:",
     "drizzle-kit": "^0.31.0",
     "typescript": "catalog:"
+  },
+  "imports": {
+    "#src/*": "./src/*.ts"
   }
 }

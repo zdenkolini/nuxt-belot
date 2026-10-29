@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { MatchView } from '@belot/server';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import * as Card from '#lib/components/ui/card/index.js';
-  import * as Dialog from '#lib/components/ui/dialog/index.js';
-  import { m } from '#lib/paraglide/messages.js';
-  import { usernameIn } from '#lib/players.js';
+  import { Button } from '#lib/components/ui/button';
+  import * as Card from '#lib/components/ui/card';
+  import * as Dialog from '#lib/components/ui/dialog';
+  import { m } from '#lib/paraglide/messages';
+  import { usernameIn } from '#lib/players';
 
   let {
     match,

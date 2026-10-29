@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { belotDeck, seeded, shuffle } from './index';
+import { belotDeck, seeded, shuffle } from '#src/index';
 
 const shuffled = (n: number) =>
   shuffle(belotDeck(), seeded(n.toString(16).padStart(32, '0')))[0];

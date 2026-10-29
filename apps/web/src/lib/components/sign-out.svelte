@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { authClient, meQuery, queryClient } from '#lib/account.js';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { authClient, meQuery, queryClient } from '#lib/account';
+  import { Button } from '#lib/components/ui/button';
+  import { m } from '#lib/paraglide/messages';
 
   // A guest who signs out loses the account, so they confirm first.
   let { isGuest }: { isGuest: boolean } = $props();

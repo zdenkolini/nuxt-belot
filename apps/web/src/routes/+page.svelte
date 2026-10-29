@@ -4,12 +4,12 @@
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { createQuery } from '@tanstack/svelte-query';
-  import { meQuery } from '#lib/account.js';
-  import { api } from '#lib/api.js';
+  import { meQuery } from '#lib/account';
+  import { api } from '#lib/api';
   import RoomMenu from '#lib/components/room-menu.svelte';
   import SuitPip from '#lib/components/match/suit-pip.svelte';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { Button } from '#lib/components/ui/button';
+  import { m } from '#lib/paraglide/messages';
 
   const me = createQuery(() => meQuery);
   const publicRooms = createQuery(() => ({

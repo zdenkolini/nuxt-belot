@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { claims } from '@belot/db';
-import { linkIn, setup, webURL, type Session } from './test-setup';
+import { linkIn, setup, webURL, type Session } from '#src/test-setup';
 
 type Ctx = Awaited<ReturnType<typeof setup>>;
 

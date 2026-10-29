@@ -3,11 +3,11 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { createQuery } from '@tanstack/svelte-query';
-  import { meQuery, queryClient } from '#lib/account.js';
-  import { api } from '#lib/api.js';
-  import { Button } from '#lib/components/ui/button/index.js';
-  import * as Dialog from '#lib/components/ui/dialog/index.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { meQuery, queryClient } from '#lib/account';
+  import { api } from '#lib/api';
+  import { Button } from '#lib/components/ui/button';
+  import * as Dialog from '#lib/components/ui/dialog';
+  import { m } from '#lib/paraglide/messages';
 
   // A seated player is always shown the way back to their room: a modal
   // they cannot close while their match runs, else a bar.

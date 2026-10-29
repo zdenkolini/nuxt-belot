@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { nextOf, setup } from './test-setup';
+import { nextOf, setup } from '#src/test-setup';
 
 test('a room owner seats bots, and bots play until it is the owner’s turn', async () => {
   const { api, player, connect } = await setup();

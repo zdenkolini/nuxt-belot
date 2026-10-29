@@ -8,8 +8,8 @@ import {
   type Random,
   type Rank,
   type Suit,
-} from './cards';
-import type { Applied, Ruleset, Seat } from './ruleset';
+} from '#src/cards';
+import type { Applied, Ruleset, Seat } from '#src/ruleset';
 
 export const targetScores = [501, 701, 1001] as const;
 export type TargetScore = (typeof targetScores)[number];

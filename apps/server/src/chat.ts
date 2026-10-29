@@ -1,4 +1,4 @@
-import type { Member } from './session';
+import type { Member } from '#src/session';
 
 export type ChatMessage = {
   id: string;

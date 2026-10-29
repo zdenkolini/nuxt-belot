@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { QueryClientProvider, createQuery } from '@tanstack/svelte-query';
   import favicon from '#lib/assets/favicon.svg';
-  import { claimQuery, meQuery, queryClient } from '#lib/account.js';
+  import { claimQuery, meQuery, queryClient } from '#lib/account';
   import RoomReturn from '#lib/components/room-return.svelte';
   import type { LayoutProps } from './$types';
 

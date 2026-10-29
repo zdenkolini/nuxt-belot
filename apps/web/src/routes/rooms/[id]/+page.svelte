@@ -14,15 +14,15 @@
     type Trick,
   } from '@belot/engine';
   import type { MatchView, RoomMessage, RoomView } from '@belot/server';
-  import { meQuery } from '#lib/account.js';
-  import { api, type RoomSocket } from '#lib/api.js';
+  import { meQuery } from '#lib/account';
+  import { api, type RoomSocket } from '#lib/api';
   import RoomChat from '#lib/components/room-chat.svelte';
-  import { Button } from '#lib/components/ui/button/index.js';
+  import { Button } from '#lib/components/ui/button';
   import ChairFigure from '#lib/components/match/chair-figure.svelte';
   import MatchScreen from '#lib/components/match/match-screen.svelte';
   import MatchPause from '#lib/components/match-pause.svelte';
-  import { m } from '#lib/paraglide/messages.js';
-  import { usernameIn } from '#lib/players.js';
+  import { m } from '#lib/paraglide/messages';
+  import { usernameIn } from '#lib/players';
 
   const id = $derived(page.params.id!);
   const me = createQuery(() => meQuery);
