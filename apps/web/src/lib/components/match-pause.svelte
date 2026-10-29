@@ -32,8 +32,15 @@
 	<div class="fixed inset-0 z-30 flex items-center justify-center bg-[oklch(0.2_0.06_25/0.45)] p-4">
 		<Card.Root class="paper w-full max-w-sm rounded-[2px] ring-0">
 			<Card.Header>
-				<Card.Title class="font-hand text-4xl leading-none">{m.match_ended()}</Card.Title>
-				<Card.Description>{m.match_ended_by_players()}</Card.Description>
+				{#if match.abandonedBy}
+					<Card.Title class="font-hand text-4xl leading-none">
+						{m.match_left_by({ username: usernameIn(match.players, match.abandonedBy) })}
+					</Card.Title>
+					<Card.Description>{m.match_left_description()}</Card.Description>
+				{:else}
+					<Card.Title class="font-hand text-4xl leading-none">{m.match_ended()}</Card.Title>
+					<Card.Description>{m.match_ended_by_players()}</Card.Description>
+				{/if}
 			</Card.Header>
 			<Card.Footer>
 				<Button onclick={onback}>{m.back_to_room()}</Button>

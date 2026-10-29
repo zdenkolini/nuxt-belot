@@ -30,7 +30,10 @@
 	// Replaced wholesale by each room the server sends.
 	let room = $state<RoomView | null>(null);
 	let closedReason = $state<(() => string) | null>(null);
-	let notice = $state<string | null>(null);
+	// A claim link opened during a running match comes back here.
+	let notice = $state<string | null>(
+		page.url.searchParams.get('claim') === 'match_running' ? m.claim_after_match() : null,
+	);
 	let socket = $state<RoomSocket | null>(null);
 	// Replaced wholesale by each match view the server sends.
 	let match = $state<MatchView | null>(null);
@@ -112,7 +115,9 @@
 		if (!error) return;
 		const value = error.value as { error?: string } | undefined;
 		notice =
-			value?.error === 'match_running'
+			value?.error === 'seated_in_match'
+				? m.seated_in_match()
+				: value?.error === 'match_running'
 				? m.match_running()
 				: error.status === 409
 					? m.seat_taken()
@@ -192,6 +197,7 @@
 		ondismissscore={() => (dealScore = null)}
 		onplayagain={start}
 		onback={backToRoom}
+		onleave={leaveRoom}
 	>
 		{#snippet chat()}
 			{#if socket}

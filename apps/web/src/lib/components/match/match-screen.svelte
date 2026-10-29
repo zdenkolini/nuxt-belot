@@ -35,6 +35,7 @@
 		ondismissscore,
 		onplayagain,
 		onback,
+		onleave,
 		chat,
 	}: {
 		match: MatchView;
@@ -47,8 +48,11 @@
 		ondismissscore: () => void;
 		onplayagain: () => void;
 		onback: () => void;
+		onleave: () => void;
 		chat?: Snippet;
 	} = $props();
+
+	let confirmingLeave = $state(false);
 
 	const wide = new MediaQuery('min-width: 48rem');
 	let padOpen = $state(false);
@@ -173,7 +177,25 @@
 	{#if chat}
 		<div class="paper rotate-[0.6deg] px-4 py-3 text-sm">{@render chat()}</div>
 	{/if}
+	{#if !match.result && !match.ended}
+		<Button variant="outline" size="sm" class="self-start" onclick={() => (confirmingLeave = true)}>
+			{m.leave_match()}
+		</Button>
+	{/if}
 {/snippet}
+
+<Dialog.Root bind:open={confirmingLeave}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>{m.leave_match_title()}</Dialog.Title>
+			<Dialog.Description>{m.leave_match_description()}</Dialog.Description>
+		</Dialog.Header>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (confirmingLeave = false)}>{m.stay_in_match()}</Button>
+			<Button variant="destructive" onclick={onleave}>{m.leave_match()}</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 
 <div
 	class="table-skin room grid h-svh grid-rows-[auto_1fr] overflow-hidden text-(--ink) md:grid-cols-[1fr_19rem] md:grid-rows-1"

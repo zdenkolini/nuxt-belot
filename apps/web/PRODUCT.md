@@ -28,7 +28,7 @@ What the product must do better than other belot apps:
 - Casual matches happen in rooms. A player creates a room, shares the invite link, and friends join. Rooms are public or private. Room chat is available.
 - Ranked matches start only from the queue (ADR 0005), never from a room. Target score is 1001 in ranked matches; 501, 701, or 1001 in casual matches.
 - A player who leaves a ranked match and does not return in time causes a forfeit for their team.
-- Sign-in is by email magic link. A new player chooses a username before play. An invite link opened before sign-in leads to the room after sign-in.
+- Every player has an account. A player either starts as a guest (one click, auto-generated username, casual play only) or signs in by email magic link and chooses a username before play. A guest can claim their account by connecting an email (ADR 0007). An invite link opened before sign-in leads to the room after sign-in.
 - The server holds the game state and enforces the rules (ADR 0001).
 
 ## Capabilities and Constraints
