@@ -1,5 +1,147 @@
 import { expect, test } from 'bun:test';
+import {
+  addMember,
+  assertMember,
+  assertOwner,
+  leave,
+  nextOwner,
+  removeMember,
+  seatBot,
+  seatedPlayers,
+  takeSeat,
+  type Room,
+} from '#src/modules/rooms/service';
+import { Conflict, Forbidden, NotFound } from '#src/plugins/errors';
 import { setup, table } from '#src/test/setup';
+
+const roomOf = (room: Partial<Room>): Room => ({
+  id: 'r1',
+  ownerId: 'ana',
+  isPublic: false,
+  targetScore: 1001,
+  members: ['ana'],
+  seats: [null, null, null, null],
+  removed: [],
+  createdAt: new Date(),
+  ...room,
+});
+
+test('the next owner is the next seated player counter-clockwise', () => {
+  const room = roomOf({
+    members: ['ana', 'bob', 'cid'],
+    seats: ['ana', null, 'cid', 'bob'],
+  });
+  expect(nextOwner(room)).toBe('cid');
+});
+
+test('the next owner skips bots, else is the longest-staying member', () => {
+  const room = roomOf({
+    members: ['ana', 'bot-1', 'bob', 'cid'],
+    seats: ['ana', 'bot-1', null, null],
+  });
+  expect(nextOwner(room)).toBe('bob');
+});
+
+test('a member who leaves gives up their seat and the room owner', () => {
+  const room = roomOf({
+    members: ['ana', 'bob'],
+    seats: ['ana', 'bob', null, null],
+  });
+  leave(room, 'ana');
+  expect(room).toMatchObject({
+    ownerId: 'bob',
+    members: ['bob'],
+    seats: [null, 'bob', null, null],
+  });
+});
+
+test('a room with only bots left has no members', () => {
+  const room = roomOf({
+    members: ['ana', 'bot-1'],
+    seats: ['ana', 'bot-1', null, null],
+  });
+  leave(room, 'ana');
+  expect(room.members).toEqual([]);
+});
+
+test('a removed player cannot join again', () => {
+  const room = roomOf({ removed: ['bob'] });
+  expect(() => addMember(room, 'bob')).toThrow(
+    new Forbidden('removed_from_room'),
+  );
+});
+
+test('joining twice keeps one membership', () => {
+  const room = roomOf({});
+  addMember(room, 'bob');
+  addMember(room, 'bob');
+  expect(room.members).toEqual(['ana', 'bob']);
+});
+
+test('only members and only the room owner pass their checks', () => {
+  const room = roomOf({});
+  expect(() => assertMember(room, 'bob')).toThrow(
+    new Forbidden('not_a_member'),
+  );
+  expect(() => assertOwner(room, 'bob')).toThrow(
+    new Forbidden('not_the_owner'),
+  );
+  assertMember(room, 'ana');
+  assertOwner(room, 'ana');
+});
+
+test('taking a seat frees the old one; a taken seat is rejected', () => {
+  const room = roomOf({
+    members: ['ana', 'bob'],
+    seats: ['ana', 'bob', null, null],
+  });
+  takeSeat(room, 'ana', 2);
+  expect(room.seats).toEqual([null, 'bob', 'ana', null]);
+  expect(() => takeSeat(room, 'ana', 1)).toThrow(new Conflict('seat_taken'));
+});
+
+test('the room owner removes a member, who is marked removed', () => {
+  const room = roomOf({
+    members: ['ana', 'bob'],
+    seats: [null, 'bob', null, null],
+  });
+  removeMember(room, 'bob');
+  expect(room).toMatchObject({
+    members: ['ana'],
+    seats: [null, null, null, null],
+    removed: ['bob'],
+  });
+  expect(() => removeMember(room, 'bob')).toThrow(
+    new NotFound('member_not_found'),
+  );
+  expect(() => removeMember(room, 'ana')).toThrow(
+    new NotFound('member_not_found'),
+  );
+});
+
+test('a bot takes a free seat while bots are left', () => {
+  const room = roomOf({
+    members: ['ana', 'bot-1', 'bot-2'],
+    seats: ['ana', 'bot-1', 'bot-2', null],
+  });
+  expect(() => seatBot(room, 0)).toThrow(new Conflict('seat_taken'));
+  seatBot(room, 3);
+  expect(room.seats).toEqual(['ana', 'bot-1', 'bot-2', 'bot-3']);
+  room.seats[3] = null;
+  expect(() => seatBot(room, 3)).toThrow(new Conflict('no_bot_left'));
+});
+
+test('a match starts only with four seated players', () => {
+  expect(() => seatedPlayers(roomOf({}))).toThrow(
+    new Conflict('seats_not_full'),
+  );
+  expect(seatedPlayers(roomOf({ seats: ['a', 'b', 'c', 'd'] }))).toEqual([
+    'a',
+    'b',
+    'c',
+    'd',
+  ]);
+});
 
 // Ana creates a room; the other players open its invite link.
 const roomWith = async (...others: string[]) => {
@@ -262,7 +404,7 @@ test('taking a seat in another room frees the seat in the first', async () => {
 });
 
 test('a player in a running match cannot take a seat in another room', async () => {
-  const { api, room, roomId, players } = await table();
+  const { api, room, players } = await table();
   await room.start.post({}, players[0]!);
 
   const { data: other } = await api.rooms.post({}, players[0]!);
@@ -270,7 +412,7 @@ test('a player in a running match cannot take a seat in another room', async () 
     .rooms({ id: other!.id })
     .seat.put({ seat: 0 }, players[0]!);
   expect(status).toBe(409);
-  expect(error?.value).toEqual({ error: 'seated_in_match', roomId });
+  expect(error?.value).toEqual({ error: 'seated_in_match' });
 });
 
 test('a spectator is in the room only while connected; ownership passes on', async () => {
