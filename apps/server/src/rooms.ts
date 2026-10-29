@@ -3,9 +3,15 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
 import { botIds, botMove, createBots, isBot } from '#src/bots';
-import { createChat, type ChatIntent, type ChatServerMessage } from '#src/chat';
-import { createPlay, type MatchIntent, type MatchMessage } from '#src/play';
-import type { Member, Session } from '#src/plugins/session';
+import { createChat } from '#src/chat';
+import type { SocketHandlers } from '#src/modules/sockets/index';
+import type {
+  RoomMessage,
+  Socket,
+  Sockets,
+} from '#src/modules/sockets/service';
+import { createPlay } from '#src/play';
+import type { Session } from '#src/plugins/session';
 
 type Room = typeof rooms.$inferSelect;
 
@@ -27,18 +33,6 @@ export type PublicRoom = {
   players: (string | null)[];
 };
 
-// Everything the server sends over the room socket.
-export type RoomMessage =
-  | { type: 'room'; room: RoomView }
-  | { type: 'removed' }
-  | MatchMessage
-  | ChatServerMessage;
-
-type Socket = Member & {
-  send: (message: RoomMessage) => void;
-  close: () => void;
-};
-
 // t.UnionEnum would default a missing target score to 501.
 const targetScore = t.Union(
   targetScores.map((score) => t.Literal(score)) as [
@@ -57,24 +51,10 @@ const nextOwner = (room: Room) => {
   return room.members.find((id) => id !== room.ownerId && !isBot(id));
 };
 
-export const createRooms = async (db: Db, bots: boolean) => {
+export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
   if (bots) await createBots(db);
-  // Open room sockets by room id, then by connection id.
-  const sockets = new Map<string, Map<string, Socket>>();
-  const chat = createChat();
-  const play = await createPlay(
-    db,
-    (roomId) =>
-      new Set([...(sockets.get(roomId)?.values() ?? [])].map((s) => s.userId)),
-  );
-
-  // Sends each user their own message, if they have one.
-  const sendEach = (roomId: string, messages: Map<string, RoomMessage>) => {
-    for (const socket of sockets.get(roomId)?.values() ?? []) {
-      const message = messages.get(socket.userId);
-      if (message) socket.send(message);
-    }
-  };
+  const chat = createChat(sockets);
+  const play = await createPlay(db, sockets.connected);
 
   // A bot whose turn it is plays after a short pause, and so on, until a
   // person is to play or the match is paused or over.
@@ -103,7 +83,7 @@ export const createRooms = async (db: Db, bots: boolean) => {
   };
 
   const sendMatch = (roomId: string, messages: Map<string, RoomMessage>) => {
-    sendEach(roomId, messages);
+    sockets.sendEach(roomId, messages);
     runBots(roomId);
   };
 
@@ -127,22 +107,11 @@ export const createRooms = async (db: Db, bots: boolean) => {
 
   // Only members get the room, so a player who just left hears nothing more.
   const broadcast = (room: RoomView) => {
-    const members = room.members.map((m) => m.id);
-    for (const socket of sockets.get(room.id)?.values() ?? []) {
-      if (members.includes(socket.userId)) socket.send({ type: 'room', room });
-    }
-  };
-
-  const disconnect = (
-    roomId: string,
-    userId: string,
-    message?: RoomMessage,
-  ) => {
-    for (const socket of sockets.get(roomId)?.values() ?? []) {
-      if (socket.userId !== userId) continue;
-      if (message) socket.send(message);
-      socket.close();
-    }
+    const message: RoomMessage = { type: 'room', room };
+    sockets.sendEach(
+      room.id,
+      new Map(room.members.map((m) => [m.id, message])),
+    );
   };
 
   // Changes one room in a transaction, then sends the new room to everyone in it.
@@ -209,9 +178,6 @@ export const createRooms = async (db: Db, bots: boolean) => {
     if (room.members.every(isBot)) room.members = [];
   };
 
-  const connected = (roomId: string, userId: string) =>
-    [...(sockets.get(roomId)?.values() ?? [])].some((s) => s.userId === userId);
-
   const roomsWith = (
     column: typeof rooms.seats | typeof rooms.members,
     userId: string,
@@ -235,13 +201,9 @@ export const createRooms = async (db: Db, bots: boolean) => {
       if (failure) return failure;
       leave(room, userId);
     });
-    if (result.ok) disconnect(id, userId);
+    if (result.ok) sockets.close({ roomId: id, userId });
     return result;
   };
-
-  // Opening a socket reads the room first. Messages and the close that come
-  // meanwhile wait for it, by connection id.
-  const opening = new Map<string, Promise<void>>();
 
   const routes = (session: Session) =>
     new Elysia({ prefix: '/rooms' })
@@ -347,7 +309,7 @@ export const createRooms = async (db: Db, bots: boolean) => {
           if (elsewhere) {
             await update(elsewhere.id, (room) => {
               room.seats = room.seats.map((s) => (s === userId ? null : s));
-              if (!connected(room.id, userId)) leave(room, userId);
+              if (!sockets.connected(room.id).has(userId)) leave(room, userId);
             });
           }
           return result.room;
@@ -407,7 +369,9 @@ export const createRooms = async (db: Db, bots: boolean) => {
             room.removed.push(member);
           });
           if (!result.ok) return result.failure;
-          disconnect(id, member, { type: 'removed' });
+          const removed = { roomId: id, userId: member };
+          sockets.sendTo(removed, { type: 'removed' });
+          sockets.close(removed);
           return result.room;
         },
         {
@@ -462,83 +426,56 @@ export const createRooms = async (db: Db, bots: boolean) => {
           player: true,
           params: t.Object({ id: t.String({ format: 'uuid' }) }),
         },
-      )
-      .ws('/:id/ws', {
-        player: true,
-        params: t.Object({ id: t.String({ format: 'uuid' }) }),
-        open(ws) {
-          const { userId, params } = ws.data;
-          const open = async () => {
-            const [room] = await db
-              .select()
-              .from(rooms)
-              .where(eq(rooms.id, params.id));
-            if (!room || !room.members.includes(userId))
-              return ws.close(4403, 'not_a_member');
-            const socket: Socket = {
-              roomId: params.id,
-              userId,
-              send: (message) => ws.send(JSON.stringify(message)),
-              close: () => ws.close(),
-            };
-            const roomSockets = sockets.get(params.id) ?? new Map();
-            sockets.set(params.id, roomSockets.set(ws.id, socket));
-            socket.send({ type: 'room', room: await view(room) });
-            // A seated player coming back may end the pause for everyone.
-            if (play.seatOf(socket) !== undefined) {
-              sendMatch(params.id, play.viewsOf(params.id));
-            } else {
-              const match = play.viewFor(socket);
-              if (match) socket.send(match);
-            }
-          };
-          const opened = open();
-          opening.set(ws.id, opened);
-          return opened;
-        },
-        async message(ws, body) {
-          await opening.get(ws.id);
-          // Elysia parses JSON messages; anything else is not an intent.
-          const intent = (typeof body === 'object' ? body : null) as Partial<
-            ChatIntent | MatchIntent
-          > | null;
-          const roomSockets = sockets.get(ws.data.params.id);
-          const socket = roomSockets?.get(ws.id);
-          if (!roomSockets || !socket) return;
-          if (intent?.type === 'match.move' || intent?.type === 'match.end') {
-            const done =
-              intent.type === 'match.move'
-                ? await play.move(socket, intent.move ?? {})
-                : await play.end(socket);
-            if (done.ok) sendMatch(socket.roomId, done.views);
-            else socket.send({ type: 'match.rejected', reason: done.reason });
-          } else if (String(intent?.type).startsWith('chat.')) {
-            chat.handle(socket, intent as ChatIntent, [
-              ...roomSockets.values(),
-            ]);
-          }
-        },
-        async close(ws) {
-          const { userId, params } = ws.data;
-          await opening.get(ws.id);
-          opening.delete(ws.id);
-          sockets.get(params.id)?.delete(ws.id);
-          // A seated player gone pauses the match for everyone.
-          if (play.seatOf({ roomId: params.id, userId }) !== undefined) {
-            sendEach(params.id, play.viewsOf(params.id));
-          } else if (!connected(params.id, userId)) {
-            // A spectator is in a room only while connected to it.
-            await update(params.id, (room) => {
-              if (!room.members.includes(userId) || room.seats.includes(userId))
-                return 'stays';
-              leave(room, userId);
-            });
-          }
-        },
+      );
+
+  // A rejected move or end goes back to the socket that sent it.
+  const answer = (
+    socket: Socket,
+    done: Awaited<ReturnType<typeof play.move | typeof play.end>>,
+  ) => {
+    if (done.ok) sendMatch(socket.roomId, done.views);
+    else socket.send({ type: 'match.rejected', reason: done.reason });
+  };
+
+  const socketHandlers: SocketHandlers = {
+    room: async ({ roomId, userId }) => {
+      const [room] = await db.select().from(rooms).where(eq(rooms.id, roomId));
+      if (!room || !room.members.includes(userId)) return undefined;
+      return view(room);
+    },
+    opened: (socket) => {
+      // A seated player coming back may end the pause for everyone.
+      if (play.seatOf(socket) !== undefined) {
+        sendMatch(socket.roomId, play.viewsOf(socket.roomId));
+        return;
+      }
+      const match = play.viewFor(socket);
+      if (match) socket.send(match);
+    },
+    move: async (socket, move) => answer(socket, await play.move(socket, move)),
+    end: async (socket) => answer(socket, await play.end(socket)),
+    chat: chat.handle,
+    lastClosed: async (member) => {
+      // A seated player gone pauses the match for everyone.
+      if (play.seatOf(member) !== undefined) {
+        sockets.sendEach(member.roomId, play.viewsOf(member.roomId));
+        return;
+      }
+      // A spectator is in a room only while connected to it.
+      await update(member.roomId, (room) => {
+        if (
+          !room.members.includes(member.userId) ||
+          room.seats.includes(member.userId)
+        )
+          return 'stays';
+        leave(room, member.userId);
       });
+    },
+  };
 
   return {
     routes,
+    socketHandlers,
 
     // The user's seated room: its owner, who names it, its filled seats, and
     // whether a match is running there.
