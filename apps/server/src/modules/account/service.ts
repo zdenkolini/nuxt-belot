@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { claims, matches, user, type Db } from '@belot/db';
-import { and, desc, eq, isNull, sql, type Column } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql, type Column } from 'drizzle-orm';
 import {
   Conflict,
   Forbidden,
@@ -22,6 +22,16 @@ const isUniqueViolation = (e: unknown) =>
 // seats or members.
 export const holdsUser = (column: Column, userId: string) =>
   sql`${column} @> ${JSON.stringify([userId])}::jsonb`;
+
+export const usernames = async (db: Db, ids: string[]) =>
+  new Map(
+    (
+      await db
+        .select({ id: user.id, username: user.username })
+        .from(user)
+        .where(inArray(user.id, ids))
+    ).map((u) => [u.id, u.username]),
+  );
 
 export const me = async (db: Db, userId: string) => {
   const [row] = await db

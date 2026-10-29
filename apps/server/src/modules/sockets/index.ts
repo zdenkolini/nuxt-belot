@@ -2,7 +2,7 @@ import { Elysia } from 'elysia';
 import type { ChatIntent } from '#src/chat';
 import { roomParams } from '#src/modules/rooms/model';
 import type { Socket, Sockets } from '#src/modules/sockets/service';
-import type { MatchIntent } from '#src/play';
+import type { MatchIntent } from '#src/modules/matches/service';
 import type { Member, Session } from '#src/plugins/session';
 import type { RoomView } from '#src/modules/rooms/service';
 

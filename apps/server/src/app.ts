@@ -11,7 +11,11 @@ import { createSession } from '#src/plugins/session';
 
 export type { Email } from '#src/plugins/auth';
 export type { ChatIntent, ChatMessage } from '#src/chat';
-export type { MatchIntent, MatchView, MoveRejection } from '#src/play';
+export type {
+  MatchIntent,
+  MatchView,
+  MoveRejection,
+} from '#src/modules/matches/service';
 export type { RoomMessage } from '#src/modules/sockets/service';
 export type { PublicRoom, RoomView } from '#src/modules/rooms/service';
 
