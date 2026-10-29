@@ -23,6 +23,9 @@ Put each server feature in `modules/<feature>/`:
 | `service.ts`        | Logic. It calls Drizzle directly. |
 | `<feature>.test.ts` | Tests                             |
 
+Elysia plugins that every module uses, such as session, auth and errors, go
+in `plugins/`. Shared test setup is `test/setup.ts`.
+
 ## Names and exports
 
 - Use kebab-case file names.

@@ -1,7 +1,7 @@
 import { claims, matches, user, type Db } from '@belot/db';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
-import type { Session } from '#src/session';
+import type { Session } from '#src/plugins/session';
 
 const sat = (userId: string) =>
   sql`${matches.seats} @> ${JSON.stringify([userId])}::jsonb`;

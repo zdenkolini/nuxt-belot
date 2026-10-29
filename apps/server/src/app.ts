@@ -2,12 +2,13 @@ import { cors } from '@elysiajs/cors';
 import { matches, user } from '@belot/db';
 import { desc, eq, sql } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
-import { createAuth, type AuthOptions } from '#src/auth';
+import { createAuth, type AuthOptions } from '#src/plugins/auth';
+import { errors } from '#src/plugins/errors';
 import { claimRoutes } from '#src/claims';
 import { createRooms } from '#src/rooms';
-import { createSession } from '#src/session';
+import { createSession } from '#src/plugins/session';
 
-export type { Email } from '#src/auth';
+export type { Email } from '#src/plugins/auth';
 export type { ChatIntent, ChatMessage } from '#src/chat';
 export type { MatchIntent, MatchView, MoveRejection } from '#src/play';
 export type { PublicRoom, RoomMessage, RoomView } from '#src/rooms';
@@ -30,6 +31,7 @@ export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
   return (
     new Elysia()
       .use(cors({ origin: options.webURL, credentials: true }))
+      .use(errors)
       .mount(auth.handler)
       .use(session)
       .use(rooms.routes(session))

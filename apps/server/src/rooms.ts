@@ -5,7 +5,7 @@ import { Elysia, status, t } from 'elysia';
 import { botIds, botMove, createBots, isBot } from '#src/bots';
 import { createChat, type ChatIntent, type ChatServerMessage } from '#src/chat';
 import { createPlay, type MatchIntent, type MatchMessage } from '#src/play';
-import type { Member, Session } from '#src/session';
+import type { Member, Session } from '#src/plugins/session';
 
 type Room = typeof rooms.$inferSelect;
 

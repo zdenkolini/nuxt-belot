@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { setup, table } from '#src/test-setup';
+import { setup, table } from '#src/test/setup';
 
 // Ana creates a room; the other players open its invite link.
 const roomWith = async (...others: string[]) => {
