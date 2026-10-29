@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "options": { "typeAware": true },
+  "rules": {
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/no-unsafe-type-assertion": "warn",
+    "no-nested-ternary": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          { "group": ["./*", "../*"], "message": "Use the #src/* or #lib/* alias." },
+          { "regex": "^#.*\\.js$", "message": "Drop the .js extension." }
+        ]
+      }
+    ]
+  }
+}

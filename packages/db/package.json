@@ -5,7 +5,7 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "bun test",
-    "typecheck": "bun --bun tsc",
+    "typecheck": "bun check",
     "generate": "bun --bun drizzle-kit generate"
   },
   "dependencies": {

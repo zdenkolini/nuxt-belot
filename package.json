@@ -20,12 +20,14 @@
     "dev": "bun run --parallel --filter '@belot/server' --filter '@belot/web' dev",
     "test": "bun --filter '*' test",
     "typecheck": "bun --filter '*' typecheck",
-    "prepare": "husky"
+    "lint": "oxlint",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "husky": "^9.0.0",
-    "prettier": "^3.0.0"
+    "lefthook": "^2.2.2",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005"
   }
 }

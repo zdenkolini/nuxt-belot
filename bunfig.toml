@@ -1,0 +1,4 @@
+[fmt]
+singleQuote = true
+useTabs = false
+ignorePatterns = ["drizzle/"]
