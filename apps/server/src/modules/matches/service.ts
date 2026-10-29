@@ -13,7 +13,7 @@ import {
   type Seat,
 } from '@belot/engine';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
-import { isBot } from '#src/bots';
+import { isBot } from '#src/modules/bots/service';
 import { usernames } from '#src/modules/account/service';
 import type { Member } from '#src/plugins/session';
 
@@ -314,3 +314,5 @@ export const createMatches = async (
     },
   };
 };
+
+export type Matches = Awaited<ReturnType<typeof createMatches>>;

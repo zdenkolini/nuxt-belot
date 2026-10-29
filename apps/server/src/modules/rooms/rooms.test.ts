@@ -6,7 +6,6 @@ import {
   leave,
   nextOwner,
   removeMember,
-  seatBot,
   seatedPlayers,
   takeSeat,
   type Room,
@@ -117,18 +116,6 @@ test('the room owner removes a member, who is marked removed', () => {
   expect(() => removeMember(room, 'ana')).toThrow(
     new NotFound('member_not_found'),
   );
-});
-
-test('a bot takes a free seat while bots are left', () => {
-  const room = roomOf({
-    members: ['ana', 'bot-1', 'bot-2'],
-    seats: ['ana', 'bot-1', 'bot-2', null],
-  });
-  expect(() => seatBot(room, 0)).toThrow(new Conflict('seat_taken'));
-  seatBot(room, 3);
-  expect(room.seats).toEqual(['ana', 'bot-1', 'bot-2', 'bot-3']);
-  room.seats[3] = null;
-  expect(() => seatBot(room, 3)).toThrow(new Conflict('no_bot_left'));
 });
 
 test('a match starts only with four seated players', () => {
