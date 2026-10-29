@@ -14,6 +14,6 @@ const app = await createApp({
   bots: process.env.NODE_ENV !== 'production',
 });
 
-app.listen(Number(process.env.PORT ?? 3000));
-
-console.log(`Server listening on ${app.server?.url}`);
+app.listen(Number(process.env.PORT ?? 3000), ({ url }) => {
+  console.log(`Server listening on ${url.href}`);
+});

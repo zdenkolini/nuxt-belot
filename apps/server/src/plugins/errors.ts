@@ -40,8 +40,8 @@ export class TooManyRequests<
 export const errorBody = <const Code extends string>(code: Code) =>
   t.Object({ error: t.Literal(code) });
 
-// Elysia's own errors and a thrown `status()` keep their responses: routes
-// not yet moved to typed errors, and the web side, rely on them.
+// Elysia's own errors and a thrown `status()` keep their responses: the web
+// side relies on them.
 const elysiaCodes = new Set<unknown>([
   'VALIDATION',
   'NOT_FOUND',

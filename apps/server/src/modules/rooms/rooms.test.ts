@@ -1,4 +1,6 @@
+import assert from 'node:assert';
 import { expect, test } from 'bun:test';
+import { targetScores } from '@belot/engine';
 import {
   addMember,
   assertMember,
@@ -135,13 +137,14 @@ const roomWith = async (...others: string[]) => {
   const ctx = await setup();
   const ana = await ctx.player('ana');
   const { data: room } = await ctx.api.rooms.post({}, ana);
-  const players = [ana];
+  assert(room);
+  const players: [typeof ana, ...(typeof ana)[]] = [ana];
   for (const name of others) {
     const p = await ctx.player(name);
-    await ctx.api.rooms({ id: room!.id }).join.post({}, p);
+    await ctx.api.rooms({ id: room.id }).join.post({}, p);
     players.push(p);
   }
-  return { ...ctx, roomId: room!.id, players };
+  return { ...ctx, roomId: room.id, players };
 };
 
 test('the creator of a room is its room owner and gets the room over the socket', async () => {
@@ -158,8 +161,9 @@ test('the creator of a room is its room owner and gets the room over the socket'
     seats: [null, null, null, null],
   });
 
-  const socket = await connect(room!.id, ana);
-  expect(await socket.next()).toEqual({ type: 'room', room: room! });
+  assert(room);
+  const socket = await connect(room.id, ana);
+  expect(await socket.next()).toEqual({ type: 'room', room });
 });
 
 test('rooms need a session', async () => {
@@ -173,10 +177,11 @@ test('opening the invite link puts a player in the room, live for everyone', asy
   const ana = await player('ana');
   const bob = await player('bob');
   const { data: room } = await api.rooms.post({}, ana);
-  const anaSocket = await connect(room!.id, ana);
+  assert(room);
+  const anaSocket = await connect(room.id, ana);
   await anaSocket.next();
 
-  const { data, status } = await api.rooms({ id: room!.id }).join.post({}, bob);
+  const { data, status } = await api.rooms({ id: room.id }).join.post({}, bob);
   expect(status).toBe(200);
   const members = [
     { id: ana.id, username: 'ana' },
@@ -213,6 +218,7 @@ test('only members can open the room socket', async () => {
 test('a private room is not listed; a public room is listed with its seated players', async () => {
   const { api, roomId, players } = await roomWith('bob');
   const [ana, bob] = players;
+  assert(bob);
   expect((await api.rooms.get(bob)).data).toEqual([]);
 
   await api.rooms({ id: roomId }).patch({ isPublic: true }, ana);
@@ -227,13 +233,14 @@ test('a private room is not listed; a public room is listed with its seated play
 test('players pick, move to, and leave seats, and everyone sees it live', async () => {
   const { api, roomId, players, connect } = await roomWith('bob');
   const [ana, bob] = players;
+  assert(bob);
   const room = api.rooms({ id: roomId });
-  const bobSocket = await connect(roomId, bob!);
+  const bobSocket = await connect(roomId, bob);
   await bobSocket.next();
 
   await room.seat.put({ seat: 0 }, ana);
   expect(await bobSocket.next()).toMatchObject({
-    room: { seats: [ana!.id, null, null, null] },
+    room: { seats: [ana.id, null, null, null] },
   });
 
   const taken = await room.seat.put({ seat: 0 }, bob);
@@ -242,7 +249,7 @@ test('players pick, move to, and leave seats, and everyone sees it live', async 
 
   await room.seat.put({ seat: 3 }, ana);
   expect(await bobSocket.next()).toMatchObject({
-    room: { seats: [null, null, null, ana!.id] },
+    room: { seats: [null, null, null, ana.id] },
   });
 
   await room.seat.delete({}, ana);
@@ -261,8 +268,9 @@ test('only members can take a seat', async () => {
 test('the room owner sets the target score; other players cannot', async () => {
   const { api, roomId, players, connect } = await roomWith('bob');
   const [ana, bob] = players;
+  assert(bob);
   const room = api.rooms({ id: roomId });
-  const bobSocket = await connect(roomId, bob!);
+  const bobSocket = await connect(roomId, bob);
   await bobSocket.next();
 
   const denied = await room.patch({ targetScore: 501 }, bob);
@@ -275,26 +283,34 @@ test('the room owner sets the target score; other players cannot', async () => {
 
 test('the target score is 501, 701, or 1001', async () => {
   const { api, roomId, players } = await roomWith();
+  for (const targetScore of targetScores) {
+    const accepted = await api
+      .rooms({ id: roomId })
+      .patch({ targetScore }, players[0]);
+    expect(accepted.status).toBe(200);
+  }
   const { status } = await api
     .rooms({ id: roomId })
-    .patch({ targetScore: 600 as 501 }, players[0]);
+    // @ts-expect-error a client may send any number
+    .patch({ targetScore: 600 }, players[0]);
   expect(status).toBe(422);
 });
 
 test('the room owner removes a player, who cannot come back', async () => {
   const { api, roomId, players, connect } = await roomWith('bob', 'cara');
   const [ana, bob, cara] = players;
+  assert(bob && cara);
   const room = api.rooms({ id: roomId });
   await room.seat.put({ seat: 1 }, bob);
-  const bobSocket = await connect(roomId, bob!);
-  const caraSocket = await connect(roomId, cara!);
+  const bobSocket = await connect(roomId, bob);
+  const caraSocket = await connect(roomId, cara);
   await bobSocket.next();
   await caraSocket.next();
 
-  const denied = await room.members({ userId: bob!.id }).delete({}, cara);
+  const denied = await room.members({ userId: bob.id }).delete({}, cara);
   expect(denied.status).toBe(403);
 
-  expect((await room.members({ userId: bob!.id }).delete({}, ana)).status).toBe(
+  expect((await room.members({ userId: bob.id }).delete({}, ana)).status).toBe(
     200,
   );
   expect(await bobSocket.next()).toEqual({ type: 'removed' });
@@ -302,8 +318,8 @@ test('the room owner removes a player, who cannot come back', async () => {
   expect(await caraSocket.next()).toMatchObject({
     room: {
       members: [
-        { id: ana!.id, username: 'ana' },
-        { id: cara!.id, username: 'cara' },
+        { id: ana.id, username: 'ana' },
+        { id: cara.id, username: 'cara' },
       ],
       seats: [null, null, null, null],
     },
@@ -332,19 +348,20 @@ test('only the room owner starts, and only with four seats full', async () => {
 test('when the room owner leaves, the next seated player becomes owner', async () => {
   const { api, roomId, players, connect } = await roomWith('bob', 'cara');
   const [ana, bob, cara] = players;
+  assert(bob && cara);
   const room = api.rooms({ id: roomId });
   await room.seat.put({ seat: 1 }, ana);
   await room.seat.put({ seat: 0 }, cara);
   await room.seat.put({ seat: 3 }, bob);
-  const anaSocket = await connect(roomId, ana!);
-  const caraSocket = await connect(roomId, cara!);
+  const anaSocket = await connect(roomId, ana);
+  const caraSocket = await connect(roomId, cara);
   await anaSocket.next();
   await caraSocket.next();
 
   expect((await room.leave.post({}, ana)).status).toBe(200);
   expect(await anaSocket.next()).toBeUndefined();
   expect(await caraSocket.next()).toMatchObject({
-    room: { ownerId: bob!.id, seats: [cara!.id, null, null, bob!.id] },
+    room: { ownerId: bob.id, seats: [cara.id, null, null, bob.id] },
   });
   expect((await room.patch({ targetScore: 501 }, bob)).status).toBe(200);
 });
@@ -352,6 +369,7 @@ test('when the room owner leaves, the next seated player becomes owner', async (
 test('a player leaves a seat and stays in the room', async () => {
   const { api, roomId, players } = await roomWith('bob');
   const [, bob] = players;
+  assert(bob);
   const room = api.rooms({ id: roomId });
   await room.seat.put({ seat: 2 }, bob);
 
@@ -372,19 +390,19 @@ test('a room is gone once its last player leaves', async () => {
 test('taking a seat in another room frees the seat in the first', async () => {
   const { api, roomId, players, connect } = await roomWith('bob');
   const [ana, bob] = players;
+  assert(bob);
   await api.rooms({ id: roomId }).seat.put({ seat: 0 }, ana);
-  const bobSocket = await connect(roomId, bob!);
+  const bobSocket = await connect(roomId, bob);
   await bobSocket.next();
 
   const { data: other } = await api.rooms.post({}, ana);
-  const { data } = await api
-    .rooms({ id: other!.id })
-    .seat.put({ seat: 1 }, ana);
-  expect(data?.seats).toEqual([null, ana!.id, null, null]);
+  assert(other);
+  const { data } = await api.rooms({ id: other.id }).seat.put({ seat: 1 }, ana);
+  expect(data?.seats).toEqual([null, ana.id, null, null]);
   expect(await bobSocket.next()).toMatchObject({
     room: {
-      ownerId: bob!.id,
-      members: [{ id: bob!.id, username: 'bob' }],
+      ownerId: bob.id,
+      members: [{ id: bob.id, username: 'bob' }],
       seats: [null, null, null, null],
     },
   });
@@ -392,12 +410,13 @@ test('taking a seat in another room frees the seat in the first', async () => {
 
 test('a player in a running match cannot take a seat in another room', async () => {
   const { api, room, players } = await table();
-  await room.start.post({}, players[0]!);
+  await room.start.post({}, players[0]);
 
-  const { data: other } = await api.rooms.post({}, players[0]!);
+  const { data: other } = await api.rooms.post({}, players[0]);
+  assert(other);
   const { status, error } = await api
-    .rooms({ id: other!.id })
-    .seat.put({ seat: 0 }, players[0]!);
+    .rooms({ id: other.id })
+    .seat.put({ seat: 0 }, players[0]);
   expect(status).toBe(409);
   expect(error?.value).toEqual({ error: 'seated_in_match' });
 });
@@ -405,20 +424,24 @@ test('a player in a running match cannot take a seat in another room', async () 
 test('a spectator is in the room only while connected; ownership passes on', async () => {
   const { api, roomId, players, connect } = await roomWith('bob', 'cara');
   const [ana, bob, cara] = players;
+  assert(bob && cara);
   await api.rooms({ id: roomId }).seat.put({ seat: 2 }, bob);
-  const bobSocket = await connect(roomId, bob!);
+  const bobSocket = await connect(roomId, bob);
   await bobSocket.next();
-  const tabs = [await connect(roomId, ana!), await connect(roomId, ana!)];
+  const tabs = [
+    await connect(roomId, ana),
+    await connect(roomId, ana),
+  ] as const;
   for (const tab of tabs) await tab.next();
 
-  tabs[0]!.ws.close();
-  tabs[1]!.ws.close();
+  tabs[0].ws.close();
+  tabs[1].ws.close();
   expect(await bobSocket.next()).toMatchObject({
     room: {
-      ownerId: bob!.id,
+      ownerId: bob.id,
       members: [
-        { id: bob!.id, username: 'bob' },
-        { id: cara!.id, username: 'cara' },
+        { id: bob.id, username: 'bob' },
+        { id: cara.id, username: 'cara' },
       ],
     },
   });
@@ -427,11 +450,12 @@ test('a spectator is in the room only while connected; ownership passes on', asy
 test('a seated room owner who goes away keeps the seat and the room', async () => {
   const { api, roomId, players, connect } = await roomWith('bob', 'cara');
   const [ana, bob, cara] = players;
+  assert(bob && cara);
   await api.rooms({ id: roomId }).seat.put({ seat: 0 }, ana);
-  const bobSocket = await connect(roomId, bob!);
+  const bobSocket = await connect(roomId, bob);
   await bobSocket.next();
-  const anaSocket = await connect(roomId, ana!);
-  const caraSocket = await connect(roomId, cara!);
+  const anaSocket = await connect(roomId, ana);
+  const caraSocket = await connect(roomId, cara);
   await anaSocket.next();
   await caraSocket.next();
 
@@ -439,12 +463,12 @@ test('a seated room owner who goes away keeps the seat and the room', async () =
   caraSocket.ws.close();
   expect(await bobSocket.next()).toMatchObject({
     room: {
-      ownerId: ana!.id,
+      ownerId: ana.id,
       members: [
-        { id: ana!.id, username: 'ana' },
-        { id: bob!.id, username: 'bob' },
+        { id: ana.id, username: 'ana' },
+        { id: bob.id, username: 'bob' },
       ],
-      seats: [ana!.id, null, null, null],
+      seats: [ana.id, null, null, null],
     },
   });
 });
@@ -452,19 +476,19 @@ test('a seated room owner who goes away keeps the seat and the room', async () =
 test('the account shows the seated room and whether its match is running', async () => {
   const { api, room, roomId, players } = await table();
   const seated = { id: roomId, owner: 'ana', seatsFilled: 4 };
-  expect((await api.me.get(players[1]!)).data?.room).toEqual({
+  expect((await api.me.get(players[1])).data?.room).toEqual({
     ...seated,
     matchRunning: false,
   });
 
-  await room.start.post({}, players[0]!);
-  expect((await api.me.get(players[1]!)).data?.room).toEqual({
+  await room.start.post({}, players[0]);
+  expect((await api.me.get(players[1])).data?.room).toEqual({
     ...seated,
     matchRunning: true,
   });
-  await room.leave.post({}, players[1]!);
-  expect((await api.me.get(players[1]!)).data?.room).toBeNull();
-  expect((await api.me.get(players[0]!)).data?.room).toMatchObject({
+  await room.leave.post({}, players[1]);
+  expect((await api.me.get(players[1])).data?.room).toBeNull();
+  expect((await api.me.get(players[0])).data?.room).toMatchObject({
     seatsFilled: 3,
     matchRunning: false,
   });

@@ -1,4 +1,3 @@
-import { targetScores, type TargetScore } from '@belot/engine';
 import { t } from 'elysia';
 import { errorBody } from '#src/plugins/errors';
 
@@ -13,12 +12,9 @@ export const seatBody = t.Object({
   seat: t.Integer({ minimum: 0, maximum: 3 }),
 });
 
-// t.UnionEnum would default a missing target score to 501.
-const targetScore = t.Union(
-  targetScores.map((score) => t.Literal(score)) as [
-    ReturnType<typeof t.Literal<TargetScore>>,
-  ],
-);
+// The engine's target scores. A literal tuple, as Eden loses the literal
+// types of a mapped array; t.UnionEnum would default a missing one to 501.
+const targetScore = t.Union([t.Literal(501), t.Literal(701), t.Literal(1001)]);
 
 export const settingsBody = t.Object({
   isPublic: t.Optional(t.Boolean()),

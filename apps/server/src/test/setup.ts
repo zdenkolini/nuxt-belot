@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { afterEach } from 'bun:test';
 import { treaty } from '@elysiajs/eden';
 import { createDb, type Db } from '@belot/db';
@@ -5,7 +6,11 @@ import { createApp, type Email, type RoomMessage } from '#src/app';
 
 export const baseURL = 'http://localhost:3000';
 export const webURL = 'http://localhost:5173';
-export const linkIn = (email: Email) => email.text.match(/https?:\/\/\S+/)![0];
+export const linkIn = (email: Email) => {
+  const link = email.text.match(/https?:\/\/\S+/)?.[0];
+  assert(link, `no link in the email to ${email.to}`);
+  return link;
+};
 
 export type Session = { headers: { cookie: string } };
 
@@ -45,7 +50,9 @@ export const setup = async (db?: Db) => {
     email: string,
     session?: Session,
   ): Promise<Session> => {
-    const link = linkIn(sent.findLast((e) => e.to === email)!);
+    const last = sent.findLast((e) => e.to === email);
+    assert(last, `no email to ${email}`);
+    const link = linkIn(last);
     const res = await app.handle(new Request(link, session));
     const cookie = res.headers
       .getSetCookie()
@@ -73,7 +80,8 @@ export const setup = async (db?: Db) => {
       .join('; ');
     const session = { headers: { cookie } };
     const { data } = await api.me.get(session);
-    return { ...session, id: data!.id };
+    assert(data);
+    return { ...session, id: data.id };
   };
 
   // A signed-in player with a username, and their user id.
@@ -81,7 +89,8 @@ export const setup = async (db?: Db) => {
     const session = await signIn(`${username}@example.com`);
     await api.me.username.put({ username }, session);
     const { data } = await api.me.get(session);
-    return { ...session, id: data!.id };
+    assert(data);
+    return { ...session, id: data.id };
   };
 
   // Eden's WebSocket cannot send the session cookie, so tests open the room
@@ -91,11 +100,12 @@ export const setup = async (db?: Db) => {
     if (!url) {
       app.listen(0);
       servers.push(app);
-      url = app.server!.url;
+      assert(app.server);
+      url = app.server.url;
     }
     const ws = new WebSocket(`ws://${url.host}/rooms/${roomId}/ws`, {
       headers: session.headers,
-    } as unknown as string[]);
+    });
     const messages: RoomMessage[] = [];
     const waiters: (() => void)[] = [];
     let closed = false;
@@ -136,6 +146,11 @@ export type Socket = Awaited<
   ReturnType<Awaited<ReturnType<typeof setup>>['connect']>
 >;
 
+const isOf = <Type extends RoomMessage['type']>(
+  message: RoomMessage,
+  type: Type,
+): message is Extract<RoomMessage, { type: Type }> => message.type === type;
+
 // The next message of one type, skipping the others.
 export const nextOf = async <Type extends RoomMessage['type']>(
   socket: Socket,
@@ -144,8 +159,7 @@ export const nextOf = async <Type extends RoomMessage['type']>(
   for (;;) {
     const message = await socket.next();
     if (!message) throw new Error(`socket closed before a ${type} message`);
-    if (message.type === type)
-      return message as Extract<RoomMessage, { type: Type }>;
+    if (isOf(message, type)) return message;
   }
 };
 
@@ -155,20 +169,30 @@ export const send = (socket: Socket, move: unknown) =>
 // Four players seated in seat order, each with an open room socket.
 export const table = async () => {
   const ctx = await setup();
-  const names = ['ana', 'bob', 'cid', 'dan'];
-  const players = [];
-  for (const name of names) players.push(await ctx.player(name));
-  const { data } = await ctx.api.rooms.post({}, players[0]!);
-  const room = ctx.api.rooms({ id: data!.id });
+  const players = [
+    await ctx.player('ana'),
+    await ctx.player('bob'),
+    await ctx.player('cid'),
+    await ctx.player('dan'),
+  ] as const;
+  const { data } = await ctx.api.rooms.post({}, players[0]);
+  assert(data);
+  const roomId = data.id;
+  const room = ctx.api.rooms({ id: roomId });
   for (const [seat, p] of players.entries()) {
     await room.join.post({}, p);
     await room.seat.put({ seat }, p);
   }
-  const sockets = [];
-  for (const p of players) {
-    const socket = await ctx.connect(data!.id, p);
+  const open = async (player: Session) => {
+    const socket = await ctx.connect(roomId, player);
     await nextOf(socket, 'room');
-    sockets.push(socket);
-  }
-  return { ...ctx, room, roomId: data!.id, players, sockets };
+    return socket;
+  };
+  const sockets: [Socket, Socket, Socket, Socket] = [
+    await open(players[0]),
+    await open(players[1]),
+    await open(players[2]),
+    await open(players[3]),
+  ];
+  return { ...ctx, room, roomId, players, sockets };
 };
