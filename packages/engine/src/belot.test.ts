@@ -1049,7 +1049,8 @@ const totals = (events: BelotEvent[]) => {
 
 const winnerOf = (a: number, b: number, caller: Team): Team => {
   if (a === b) return caller;
-  return a > b ? 0 : 1;
+  if (a > b) return 0;
+  return 1;
 };
 
 describe('match', () => {

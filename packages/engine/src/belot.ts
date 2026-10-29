@@ -361,7 +361,8 @@ const beloteRank: Partial<Record<Rank, Rank>> = {
 // A tied match goes to the team that called trump in the last deal.
 const leadingTeam = (scores: TeamPoints, caller: Seat): Team => {
   if (scores[0] === scores[1]) return teamOf(caller);
-  return scores[0] > scores[1] ? 0 : 1;
+  if (scores[0] > scores[1]) return 0;
+  return 1;
 };
 
 const playCard = (
