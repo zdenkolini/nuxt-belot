@@ -619,6 +619,12 @@ const strongerFours = ['queen', 'king', 'ten', 'ace'];
 
 type Found = { points: number; length: number; top: number };
 
+const pointsOfRun = (run: number) => {
+  if (run === 3) return 20;
+  if (run === 4) return 50;
+  return 100;
+};
+
 // Test-side reading of the declaration rules, used only to pick deals.
 const declarationsIn = (hand: Card[]): Found[] => {
   const found: Found[] = [];
@@ -630,7 +636,7 @@ const declarationsIn = (hand: Card[]): Found[] => {
         continue;
       }
       if (run >= 3) {
-        const points = run === 3 ? 20 : run === 4 ? 50 : 100;
+        const points = pointsOfRun(run);
         found.push({ points, length: run, top: i - 1 });
       }
       run = 0;
@@ -1041,6 +1047,11 @@ const totals = (events: BelotEvent[]) => {
   return { running, callers };
 };
 
+const winnerOf = (a: number, b: number, caller: Team): Team => {
+  if (a === b) return caller;
+  return a > b ? 0 : 1;
+};
+
 describe('match', () => {
   for (const targetScore of [501, 701, 1001] as const) {
     test(`a match to ${targetScore} ends after the first deal where a team reaches it`, () => {
@@ -1051,7 +1062,7 @@ describe('match', () => {
       );
       expect(end).toBe(running.length - 1);
       const [a, b] = running[end]!;
-      const winner = a === b ? callers[end]! : a > b ? 0 : 1;
+      const winner = winnerOf(a, b, callers[end]!);
       expect(events.at(-1)).toEqual({
         type: 'matchEnded',
         result: { winner, scores: [a, b] },

@@ -120,15 +120,15 @@
     notice = null;
     const { error } = await request;
     if (!error) return;
+    notice = failureNotice(error);
+  };
+
+  const failureNotice = (error: { status: unknown; value: unknown }) => {
     const value = error.value as { error?: string } | undefined;
-    notice =
-      value?.error === 'seated_in_match'
-        ? m.seated_in_match()
-        : value?.error === 'match_running'
-          ? m.match_running()
-          : error.status === 409
-            ? m.seat_taken()
-            : m.room_action_failed();
+    if (value?.error === 'seated_in_match') return m.seated_in_match();
+    if (value?.error === 'match_running') return m.match_running();
+    if (error.status === 409) return m.seat_taken();
+    return m.room_action_failed();
   };
 
   const roomApi = $derived(api.rooms({ id }));

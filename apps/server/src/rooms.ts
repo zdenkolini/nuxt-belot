@@ -335,9 +335,11 @@ export const createRooms = async (db: Db, bots: boolean) => {
             const taken = room.seats[seat];
             if (taken && taken !== userId)
               return status(409, { error: 'seat_taken' as const });
-            room.seats = room.seats.map((s, i) =>
-              i === seat ? userId : s === userId ? null : s,
-            );
+            room.seats = room.seats.map((s, i) => {
+              if (i === seat) return userId;
+              if (s === userId) return null;
+              return s;
+            });
           });
           if (!result.ok) return result.failure;
           // One seat per player: the old seat is freed, and a player not

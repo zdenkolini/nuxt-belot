@@ -14,12 +14,16 @@
     myTeam: Team;
   } = $props();
 
-  const kindName = (declaration: Declaration) =>
-    declaration.kind === 'sequence'
-      ? m.sequence_of({ count: declaration.cards.length })
-      : declaration.kind === 'fourOfAKind'
-        ? m.four_of_a_kind()
-        : m.full_sequence();
+  const kindName = (declaration: Declaration) => {
+    switch (declaration.kind) {
+      case 'sequence':
+        return m.sequence_of({ count: declaration.cards.length });
+      case 'fourOfAKind':
+        return m.four_of_a_kind();
+      default:
+        return m.full_sequence();
+    }
+  };
   const scoring = $derived(
     ([0, 1] as const).find((team) => view.declarationPoints[team] > 0),
   );
