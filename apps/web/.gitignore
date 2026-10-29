@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 # Paraglide
 src/lib/paraglide
 project.inlang/cache/
+
+# impeccable scratch
+.impeccable/hook.cache.json
+.impeccable/review/

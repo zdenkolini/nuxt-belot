@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "seat_cooldown_until" timestamp;

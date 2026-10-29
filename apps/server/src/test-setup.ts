@@ -26,25 +26,54 @@ export const setup = async (db?: Db) => {
     baseURL,
     secret: 'test-secret-that-is-at-least-32-chars',
     webURL,
+    bots: true,
   });
   const api = treaty(app);
 
-  // A player asks for a magic link and follows it, as the browser would.
-  const signIn = async (email: string): Promise<Session> => {
-    await app.handle(
+  // A player asks for a magic link; a guest sends their session to claim.
+  const requestLink = (email: string, session?: Session) =>
+    app.handle(
       new Request(`${baseURL}/api/auth/sign-in/magic-link`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...session?.headers },
         body: JSON.stringify({ email, callbackURL: `${webURL}/` }),
       }),
     );
+
+  // A player follows the last link sent to the email, as the browser would.
+  const openLink = async (
+    email: string,
+    session?: Session,
+  ): Promise<Session> => {
     const link = linkIn(sent.findLast((e) => e.to === email)!);
-    const res = await app.handle(new Request(link));
+    const res = await app.handle(new Request(link, session));
     const cookie = res.headers
       .getSetCookie()
       .map((c) => c.split(';')[0])
       .join('; ');
     return { headers: { cookie } };
+  };
+
+  const signIn = async (email: string) => {
+    await requestLink(email);
+    return openLink(email);
+  };
+
+  // A guest signs in with one click, as the browser would.
+  const guest = async () => {
+    const res = await app.handle(
+      new Request(`${baseURL}/api/auth/sign-in/anonymous`, {
+        method: 'POST',
+        headers: { origin: webURL },
+      }),
+    );
+    const cookie = res.headers
+      .getSetCookie()
+      .map((c) => c.split(';')[0])
+      .join('; ');
+    const session = { headers: { cookie } };
+    const { data } = await api.me.get(session);
+    return { ...session, id: data!.id };
   };
 
   // A signed-in player with a username, and their user id.
@@ -89,7 +118,18 @@ export const setup = async (db?: Db) => {
     return { ws, next, isClosed: () => closed };
   };
 
-  return { app, db, api, sent, signIn, player, connect };
+  return {
+    app,
+    db,
+    api,
+    sent,
+    requestLink,
+    openLink,
+    signIn,
+    guest,
+    player,
+    connect,
+  };
 };
 
 export type Socket = Awaited<

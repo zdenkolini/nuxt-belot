@@ -121,24 +121,34 @@ test('any seated player can end a paused match for all players', async () => {
   expect(match.view.hand).toHaveLength(6);
 });
 
-test('a player who leaves the room mid-match is missing by name and gets the seat back on joining', async () => {
-  const { room, roomId, players, sockets, views, connect } = await started();
-  expect(views[0]!.players.map((p) => p.username)).toEqual([
-    'ana',
-    'bob',
-    'cid',
-    'dan',
-  ]);
+test('a player who leaves the room mid-match abandons it: it ends for everyone and frees the seat', async () => {
+  const { room, players, sockets } = await started();
 
   expect((await room.leave.post({}, players[1]!)).status).toBe(200);
   const { match } = await nextOf(sockets[0]!, 'match');
-  expect(match.missing).toEqual([players[1]!.id]);
-  expect(match.players[1]).toEqual({ id: players[1]!.id, username: 'bob' });
+  expect(match).toMatchObject({
+    ended: true,
+    abandonedBy: players[1]!.id,
+    legalMoves: [],
+  });
+  const { room: after } = await nextOf(sockets[0]!, 'room');
+  expect(after.seats).toEqual([
+    players[0]!.id,
+    null,
+    players[2]!.id,
+    players[3]!.id,
+  ]);
+  expect((await room.start.post({}, players[0]!)).error?.value).toEqual({
+    error: 'seats_not_full',
+  });
+});
 
-  const { data } = await room.join.post({}, players[1]!);
-  expect(data?.seats[1]).toBe(players[1]!.id);
-  sockets[1] = await connect(roomId, players[1]!);
-  expect(await resumed(sockets[1]!)).toEqual(views[1]!);
+test('after an abandon the leaver can take a seat again at once', async () => {
+  const { room, players } = await started();
+  await room.leave.post({}, players[1]!);
+
+  await room.join.post({}, players[1]!);
+  expect((await room.seat.put({ seat: 1 }, players[1]!)).status).toBe(200);
 });
 
 test('a socket that closes while it opens still leaves the player missing', async () => {

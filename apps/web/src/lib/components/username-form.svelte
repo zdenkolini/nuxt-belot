@@ -6,7 +6,8 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { m } from '#lib/paraglide/messages.js';
 
-	let username = $state('');
+	// Bindable, so a page can show the name as it is typed.
+	let { username = $bindable('') }: { username?: string } = $props();
 	let message = $state('');
 	let failed = $state(false);
 	let saving = $state(false);

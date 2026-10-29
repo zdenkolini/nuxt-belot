@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T12:00:00+00:00",
+  "title": "Design System: Belot (working title)",
+  "extensions": {
+    "colorMeta": {
+      "cloth": {
+        "role": "neutral",
+        "displayName": "Gingham White",
+        "canonical": "oklch(0.975 0.006 85)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 85)",
+          "oklch(0.25 0.006 85)",
+          "oklch(0.35 0.006 85)",
+          "oklch(0.45 0.006 85)",
+          "oklch(0.6 0.006 85)",
+          "oklch(0.75 0.006 85)",
+          "oklch(0.87 0.006 85)",
+          "oklch(0.95 0.004 85)"
+        ]
+      },
+      "cloth-thread": {
+        "role": "neutral",
+        "displayName": "Gingham Thread",
+        "canonical": "oklch(0.56 0.19 26 / 0.5)",
+        "tonalRamp": [
+          "oklch(0.15 0.114 26)",
+          "oklch(0.25 0.19 26)",
+          "oklch(0.35 0.19 26)",
+          "oklch(0.45 0.19 26)",
+          "oklch(0.6 0.19 26)",
+          "oklch(0.75 0.19 26)",
+          "oklch(0.87 0.19 26)",
+          "oklch(0.95 0.114 26)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Pad Paper",
+        "canonical": "oklch(0.985 0.008 95)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 95)",
+          "oklch(0.25 0.008 95)",
+          "oklch(0.35 0.008 95)",
+          "oklch(0.45 0.008 95)",
+          "oklch(0.6 0.008 95)",
+          "oklch(0.75 0.008 95)",
+          "oklch(0.87 0.008 95)",
+          "oklch(0.95 0.005 95)"
+        ]
+      },
+      "paper-shade": {
+        "role": "neutral",
+        "displayName": "Paper Shade",
+        "canonical": "oklch(0.93 0.015 95)",
+        "tonalRamp": [
+          "oklch(0.15 0.009 95)",
+          "oklch(0.25 0.015 95)",
+          "oklch(0.35 0.015 95)",
+          "oklch(0.45 0.015 95)",
+          "oklch(0.6 0.015 95)",
+          "oklch(0.75 0.015 95)",
+          "oklch(0.87 0.015 95)",
+          "oklch(0.95 0.009 95)"
+        ]
+      },
+      "paper-rule": {
+        "role": "neutral",
+        "displayName": "Pad Rule",
+        "canonical": "oklch(0.7 0.07 245 / 0.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.042 245)",
+          "oklch(0.25 0.07 245)",
+          "oklch(0.35 0.07 245)",
+          "oklch(0.45 0.07 245)",
+          "oklch(0.6 0.07 245)",
+          "oklch(0.75 0.07 245)",
+          "oklch(0.87 0.07 245)",
+          "oklch(0.95 0.042 245)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.26 0.06 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.036 262)",
+          "oklch(0.25 0.06 262)",
+          "oklch(0.35 0.06 262)",
+          "oklch(0.45 0.06 262)",
+          "oklch(0.6 0.06 262)",
+          "oklch(0.75 0.06 262)",
+          "oklch(0.87 0.06 262)",
+          "oklch(0.95 0.036 262)"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "oklch(0.44 0.05 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.03 262)",
+          "oklch(0.25 0.05 262)",
+          "oklch(0.35 0.05 262)",
+          "oklch(0.45 0.05 262)",
+          "oklch(0.6 0.05 262)",
+          "oklch(0.75 0.05 262)",
+          "oklch(0.87 0.05 262)",
+          "oklch(0.95 0.03 262)"
+        ]
+      },
+      "ink-line": {
+        "role": "neutral",
+        "displayName": "Ink Line",
+        "canonical": "oklch(0.26 0.06 262 / 0.28)",
+        "tonalRamp": [
+          "oklch(0.15 0.036 262)",
+          "oklch(0.25 0.06 262)",
+          "oklch(0.35 0.06 262)",
+          "oklch(0.45 0.06 262)",
+          "oklch(0.6 0.06 262)",
+          "oklch(0.75 0.06 262)",
+          "oklch(0.87 0.06 262)",
+          "oklch(0.95 0.036 262)"
+        ]
+      },
+      "oxblood": {
+        "role": "primary",
+        "displayName": "Kafana Oxblood",
+        "canonical": "oklch(0.4 0.14 22)",
+        "tonalRamp": [
+          "oklch(0.15 0.084 22)",
+          "oklch(0.25 0.14 22)",
+          "oklch(0.35 0.14 22)",
+          "oklch(0.45 0.14 22)",
+          "oklch(0.6 0.14 22)",
+          "oklch(0.75 0.14 22)",
+          "oklch(0.87 0.14 22)",
+          "oklch(0.95 0.084 22)"
+        ]
+      },
+      "card-face": {
+        "role": "neutral",
+        "displayName": "Card Face",
+        "canonical": "oklch(0.995 0.002 95)",
+        "tonalRamp": [
+          "oklch(0.15 0.001 95)",
+          "oklch(0.25 0.002 95)",
+          "oklch(0.35 0.002 95)",
+          "oklch(0.45 0.002 95)",
+          "oklch(0.6 0.002 95)",
+          "oklch(0.75 0.002 95)",
+          "oklch(0.87 0.002 95)",
+          "oklch(0.95 0.001 95)"
+        ]
+      },
+      "card-red": {
+        "role": "secondary",
+        "displayName": "Suit Red",
+        "canonical": "oklch(0.53 0.21 27)",
+        "tonalRamp": [
+          "oklch(0.15 0.126 27)",
+          "oklch(0.25 0.21 27)",
+          "oklch(0.35 0.21 27)",
+          "oklch(0.45 0.21 27)",
+          "oklch(0.6 0.21 27)",
+          "oklch(0.75 0.21 27)",
+          "oklch(0.87 0.21 27)",
+          "oklch(0.95 0.126 27)"
+        ]
+      },
+      "card-black": {
+        "role": "secondary",
+        "displayName": "Suit Black",
+        "canonical": "oklch(0.2 0.02 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 262)",
+          "oklch(0.25 0.02 262)",
+          "oklch(0.35 0.02 262)",
+          "oklch(0.45 0.02 262)",
+          "oklch(0.6 0.02 262)",
+          "oklch(0.75 0.02 262)",
+          "oklch(0.87 0.02 262)",
+          "oklch(0.95 0.012 262)"
+        ]
+      },
+      "card-back": {
+        "role": "secondary",
+        "displayName": "Lattice Back",
+        "canonical": "oklch(0.4 0.14 22)",
+        "tonalRamp": [
+          "oklch(0.15 0.084 22)",
+          "oklch(0.25 0.14 22)",
+          "oklch(0.35 0.14 22)",
+          "oklch(0.45 0.14 22)",
+          "oklch(0.6 0.14 22)",
+          "oklch(0.75 0.14 22)",
+          "oklch(0.87 0.14 22)",
+          "oklch(0.95 0.084 22)"
+        ]
+      },
+      "card-back-line": {
+        "role": "secondary",
+        "displayName": "Lattice Line",
+        "canonical": "oklch(0.995 0.002 95 / 0.22)",
+        "tonalRamp": [
+          "oklch(0.15 0.001 95)",
+          "oklch(0.25 0.002 95)",
+          "oklch(0.35 0.002 95)",
+          "oklch(0.45 0.002 95)",
+          "oklch(0.6 0.002 95)",
+          "oklch(0.75 0.002 95)",
+          "oklch(0.87 0.002 95)",
+          "oklch(0.95 0.001 95)"
+        ]
+      },
+      "coaster": {
+        "role": "neutral",
+        "displayName": "Coaster Board",
+        "canonical": "oklch(0.83 0.05 70)",
+        "tonalRamp": [
+          "oklch(0.15 0.03 70)",
+          "oklch(0.25 0.05 70)",
+          "oklch(0.35 0.05 70)",
+          "oklch(0.45 0.05 70)",
+          "oklch(0.6 0.05 70)",
+          "oklch(0.75 0.05 70)",
+          "oklch(0.87 0.05 70)",
+          "oklch(0.95 0.03 70)"
+        ]
+      },
+      "wall": {
+        "role": "neutral",
+        "displayName": "Kafana Wall",
+        "canonical": "oklch(0.34 0.05 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.03 150)",
+          "oklch(0.25 0.05 150)",
+          "oklch(0.35 0.05 150)",
+          "oklch(0.45 0.05 150)",
+          "oklch(0.6 0.05 150)",
+          "oklch(0.75 0.05 150)",
+          "oklch(0.87 0.05 150)",
+          "oklch(0.95 0.03 150)"
+        ]
+      },
+      "wall-trim": {
+        "role": "neutral",
+        "displayName": "Wall Trim",
+        "canonical": "oklch(0.22 0.03 60)",
+        "tonalRamp": [
+          "oklch(0.15 0.018 60)",
+          "oklch(0.25 0.03 60)",
+          "oklch(0.35 0.03 60)",
+          "oklch(0.45 0.03 60)",
+          "oklch(0.6 0.03 60)",
+          "oklch(0.75 0.03 60)",
+          "oklch(0.87 0.03 60)",
+          "oklch(0.95 0.018 60)"
+        ]
+      },
+      "floor": {
+        "role": "neutral",
+        "displayName": "Plank Floor",
+        "canonical": "oklch(0.34 0.06 55)",
+        "tonalRamp": [
+          "oklch(0.15 0.036 55)",
+          "oklch(0.25 0.06 55)",
+          "oklch(0.35 0.06 55)",
+          "oklch(0.45 0.06 55)",
+          "oklch(0.6 0.06 55)",
+          "oklch(0.75 0.06 55)",
+          "oklch(0.87 0.06 55)",
+          "oklch(0.95 0.036 55)"
+        ]
+      },
+      "floor-seam": {
+        "role": "neutral",
+        "displayName": "Floor Seam",
+        "canonical": "oklch(0.28 0.05 50)",
+        "tonalRamp": [
+          "oklch(0.15 0.03 50)",
+          "oklch(0.25 0.05 50)",
+          "oklch(0.35 0.05 50)",
+          "oklch(0.45 0.05 50)",
+          "oklch(0.6 0.05 50)",
+          "oklch(0.75 0.05 50)",
+          "oklch(0.87 0.05 50)",
+          "oklch(0.95 0.03 50)"
+        ]
+      },
+      "lamp": {
+        "role": "neutral",
+        "displayName": "Lamp Glow",
+        "canonical": "oklch(0.78 0.09 70 / 0.35)",
+        "tonalRamp": [
+          "oklch(0.15 0.054 70)",
+          "oklch(0.25 0.09 70)",
+          "oklch(0.35 0.09 70)",
+          "oklch(0.45 0.09 70)",
+          "oklch(0.6 0.09 70)",
+          "oklch(0.75 0.09 70)",
+          "oklch(0.87 0.09 70)",
+          "oklch(0.95 0.054 70)"
+        ]
+      },
+      "chair": {
+        "role": "neutral",
+        "displayName": "Chair Wood",
+        "canonical": "oklch(0.42 0.07 50)",
+        "tonalRamp": [
+          "oklch(0.15 0.042 50)",
+          "oklch(0.25 0.07 50)",
+          "oklch(0.35 0.07 50)",
+          "oklch(0.45 0.07 50)",
+          "oklch(0.6 0.07 50)",
+          "oklch(0.75 0.07 50)",
+          "oklch(0.87 0.07 50)",
+          "oklch(0.95 0.042 50)"
+        ]
+      },
+      "chair-dark": {
+        "role": "neutral",
+        "displayName": "Chair Slat Shadow",
+        "canonical": "oklch(0.3 0.05 45)",
+        "tonalRamp": [
+          "oklch(0.15 0.03 45)",
+          "oklch(0.25 0.05 45)",
+          "oklch(0.35 0.05 45)",
+          "oklch(0.45 0.05 45)",
+          "oklch(0.6 0.05 45)",
+          "oklch(0.75 0.05 45)",
+          "oklch(0.87 0.05 45)",
+          "oklch(0.95 0.03 45)"
+        ]
+      },
+      "silhouette": {
+        "role": "neutral",
+        "displayName": "Silhouette",
+        "canonical": "oklch(0.16 0.02 260)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 260)",
+          "oklch(0.25 0.02 260)",
+          "oklch(0.35 0.02 260)",
+          "oklch(0.45 0.02 260)",
+          "oklch(0.6 0.02 260)",
+          "oklch(0.75 0.02 260)",
+          "oklch(0.87 0.02 260)",
+          "oklch(0.95 0.012 260)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (Caveat)",
+        "purpose": "Handwritten titles: room title, match over."
+      },
+      "score-total": {
+        "displayName": "Score Total",
+        "purpose": "Score pad totals row and target-score choices."
+      },
+      "score-row": {
+        "displayName": "Score Row",
+        "purpose": "One handwritten row per deal; phone score strip; match result list."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Player names and section heads on paper."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Status lines, chat, trump line."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Card counts, seat and team, captions, hints; soft ink."
+      },
+      "card-index": {
+        "displayName": "Card Index",
+        "purpose": "Rank in card corners, scaled by container query to card width."
+      }
+    },
+    "shadows": [
+      {
+        "name": "paper-rest",
+        "value": "0 1px 1px oklch(0.25 0.08 25 / 0.18), 0 8px 18px -6px oklch(0.25 0.08 25 / 0.45)",
+        "purpose": "Every paper object, on the table or in the room."
+      },
+      {
+        "name": "card-rest",
+        "value": "0 1px 1px oklch(0.25 0.08 25 / 0.25), 0 6px 14px -4px oklch(0.25 0.08 25 / 0.5)",
+        "purpose": "Playing cards at rest."
+      },
+      {
+        "name": "card-lifted",
+        "value": "0 2px 2px oklch(0.25 0.08 25 / 0.25), 0 16px 24px -6px oklch(0.25 0.08 25 / 0.55)",
+        "purpose": "Playable card on hover or focus, with an 18% rise."
+      },
+      {
+        "name": "card-back",
+        "value": "0 1px 2px oklch(0.25 0.08 25 / 0.4)",
+        "purpose": "Card backs, close to the cloth."
+      },
+      {
+        "name": "ticket-rest",
+        "value": "0 1px 2px oklch(0.25 0.08 25 / 0.2)",
+        "purpose": "Call tickets at rest."
+      },
+      {
+        "name": "ticket-lifted",
+        "value": "0 6px 12px -4px oklch(0.25 0.08 25 / 0.45)",
+        "purpose": "Call ticket on hover."
+      },
+      {
+        "name": "turn-marker",
+        "value": "0 6px 14px -6px oklch(0.25 0.08 25 / 0.6)",
+        "purpose": "The solid oxblood 'your turn' slip."
+      },
+      {
+        "name": "veil",
+        "value": "background: oklch(0.2 0.06 25 / 0.45)",
+        "purpose": "Dim over the table behind the match-result paper."
+      },
+      {
+        "name": "table-body",
+        "value": "0 0 0 0.5rem oklch(0.35 0.07 45), 0 0.75rem 0 0.5rem oklch(0.24 0.05 40), 0 1.5rem 2rem oklch(0.08 0.02 40 / 0.7)",
+        "purpose": "Wooden rim around the cloth, the table's front edge, and its soft shadow on the floor. The first two layers are wood, not shadow."
+      },
+      {
+        "name": "chair",
+        "value": "0 6px 10px oklch(0.1 0.02 40 / 0.6)",
+        "purpose": "Chair back on the wall and floor."
+      },
+      {
+        "name": "rim-light",
+        "value": "filter: drop-shadow(0 0 1.5px oklch(0.85 0.08 70 / 0.6))",
+        "purpose": "Lamp light on the edge of a silhouette."
+      }
+    ],
+    "motion": [
+      {
+        "name": "card-lift",
+        "value": "200ms ease-out (translate, filter, box-shadow)",
+        "purpose": "Playable card hover/focus lift."
+      },
+      {
+        "name": "ticket-lift",
+        "value": "150ms ease-out (translate, box-shadow)",
+        "purpose": "Call ticket hover lift."
+      },
+      {
+        "name": "turn-shift",
+        "value": "300ms (outline-color, translate)",
+        "purpose": "Active seat outline and 2px rise."
+      },
+      {
+        "name": "card-flight",
+        "value": "crossfade 300ms; fallback fade 200ms",
+        "purpose": "Card flies from hand to its trick cell; other players' cards fade in."
+      },
+      {
+        "name": "hand-reflow",
+        "value": "flip 300ms",
+        "purpose": "Hand and trick re-layout."
+      },
+      {
+        "name": "trick-sweep",
+        "value": "420ms cubic-in, 35vmin toward the winner; 0ms under prefers-reduced-motion",
+        "purpose": "Won trick slides off toward the winner's seat."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "48rem"
+      }
+    ],
+    "skinSeam": {
+      "scope": ":root:has(.table-skin)",
+      "variables": [
+        "--cloth",
+        "--cloth-thread",
+        "--cloth-size",
+        "--card-face",
+        "--card-red",
+        "--card-black",
+        "--card-back",
+        "--card-back-line"
+      ],
+      "purpose": "A host skin replaces these on the skin scope to change table, card face, and card back. Components read them only through the variables."
+    },
+    "scope": "Only the rooms/[id] route is in this world. The match table and the room lobby are both in the kafana room. Home, sign-in, username, and account still use the stock shadcn neutral theme on :root and are not yet migrated.",
+    "perspective": [
+      {
+        "name": "table-perspective",
+        "value": "900px",
+        "purpose": "Perspective of the section that holds the table top."
+      },
+      {
+        "name": "tilt-phone",
+        "value": "22deg",
+        "purpose": "--tilt below 48rem; rotateX of the table top, origin 50% 60%."
+      },
+      {
+        "name": "tilt-desktop",
+        "value": "34deg",
+        "purpose": "--tilt from 48rem."
+      },
+      {
+        "name": "seat-w",
+        "value": "3.5rem; md: clamp(4.5rem, 7vw, 6.5rem)",
+        "purpose": "Width of a seated figure."
+      }
+    ],
+    "playerSkinSeam": {
+      "scope": "per seat (the seated figure and its chair)",
+      "variables": [
+        "--silhouette",
+        "--chair",
+        "--chair-dark"
+      ],
+      "purpose": "The per-player swap point. A player skin later replaces the silhouette (and chair) for one seat. Components read them only through the variables."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action on paper: take seat, start match, play again.",
+      "html": "<button class=\"ds-btn-primary\">Take seat</button>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-btn-primary{font-family:'Inter Variable',Inter,sans-serif;height:32px;padding:0 10px;border:1px solid transparent;border-radius:4px;background:var(--oxblood);color:var(--card-face);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:color-mix(in oklch,var(--oxblood) 80%,transparent)}.ds-btn-primary:focus-visible{outline:3px solid color-mix(in oklch,var(--oxblood) 50%,transparent)}.ds-btn-primary:active{translate:0 1px}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action on paper: copy invite, leave seat, pass.",
+      "html": "<button class=\"ds-btn-outline\">Copy invite link</button>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-btn-outline{font-family:'Inter Variable',Inter,sans-serif;height:32px;padding:0 10px;border:1px solid oklch(0.26 0.06 262 / 0.28);border-radius:4px;background:var(--paper);color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}.ds-btn-outline:hover{background:oklch(0.93 0.015 95)}.ds-btn-outline:focus-visible{outline:3px solid color-mix(in oklch,var(--oxblood) 50%,transparent)}"
+    },
+    {
+      "name": "Name Card",
+      "kind": "card",
+      "refersTo": "name-card",
+      "description": "A seat on the table: small paper with name and card count; oxblood outline on turn.",
+      "html": "<div class=\"ds-cloth\"><div class=\"ds-name ds-turn\"><b>mileva</b><span>7 cards</span></div></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-cloth{padding:24px;background-color:var(--cloth);background-image:linear-gradient(90deg,var(--cloth-thread) 50%,transparent 50%),linear-gradient(var(--cloth-thread) 50%,transparent 50%);background-size:2rem 2rem}.ds-name{background:var(--paper);color:var(--ink);border-radius:2px;box-shadow:0 1px 1px oklch(0.25 0.08 25 / 0.18),0 8px 18px -6px oklch(0.25 0.08 25 / 0.45);font-family:'Inter Variable',Inter,sans-serif;display:inline-flex;flex-direction:column;padding:6px 10px;rotate:-1deg;outline:3px solid transparent;outline-offset:2px;transition:outline-color .3s,translate .3s}.ds-name b{font-size:14px;font-weight:600}.ds-name span{font-size:12px;color:var(--ink-soft)}.ds-turn{outline-color:var(--oxblood);translate:0 -2px}"
+    },
+    {
+      "name": "Playing Card",
+      "kind": "custom",
+      "refersTo": "playing-card",
+      "description": "Card face at 5:7; lifts when playable.",
+      "html": "<button class=\"ds-card\"><span class=\"ds-idx\">10<svg viewBox=\"0 0 100 100\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M50 2C62 22 96 40 96 62c0 14-11 22-23 22-9 0-16-5-19-11 1 11 5 18 13 24H33c8-6 12-13 13-24-3 6-10 11-19 11-12 0-23-8-23-22C4 40 38 22 50 2Z\"/></svg></span><span class=\"ds-pip\"><svg viewBox=\"0 0 100 100\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M50 2C62 22 96 40 96 62c0 14-11 22-23 22-9 0-16-5-19-11 1 11 5 18 13 24H33c8-6 12-13 13-24-3 6-10 11-19 11-12 0-23-8-23-22C4 40 38 22 50 2Z\"/></svg></span></button>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-card{font-family:'Inter Variable',Inter,sans-serif;container-type:inline-size;position:relative;width:88px;aspect-ratio:5/7;border:0;border-radius:6%/4.3%;background:var(--card-face);color:var(--card-black);box-shadow:0 1px 1px oklch(0.25 0.08 25 / 0.25),0 6px 14px -4px oklch(0.25 0.08 25 / 0.5);cursor:pointer;transition:translate .2s ease-out,box-shadow .2s ease-out}.ds-card:hover,.ds-card:focus-visible{translate:0 -18%;box-shadow:0 2px 2px oklch(0.25 0.08 25 / 0.25),0 16px 24px -6px oklch(0.25 0.08 25 / 0.55)}.ds-card:focus-visible{outline:3px solid var(--oxblood);outline-offset:2px}.ds-idx{position:absolute;top:5%;left:7%;display:flex;flex-direction:column;align-items:center;font-size:27cqw;font-weight:700;line-height:1;letter-spacing:-0.04em}.ds-idx svg{width:17cqw;height:17cqw;margin-top:3cqw}.ds-pip svg{position:absolute;inset:0;margin:auto;width:44cqw;height:44cqw}"
+    },
+    {
+      "name": "Card Back",
+      "kind": "custom",
+      "refersTo": "card-back",
+      "description": "Oxblood lattice back with a card-face border; opponents' hands and the lobby deck.",
+      "html": "<div class=\"ds-back\"></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-back{width:56px;height:80px;border:2px solid var(--card-face);border-radius:3px;background-color:var(--card-back);background-image:repeating-linear-gradient(45deg,var(--card-back-line) 0 1px,transparent 1px 5px),repeating-linear-gradient(-45deg,var(--card-back-line) 0 1px,transparent 1px 5px);box-shadow:0 1px 2px oklch(0.25 0.08 25 / 0.4);rotate:4deg}"
+    },
+    {
+      "name": "Score Pad",
+      "kind": "card",
+      "refersTo": "paper-panel",
+      "description": "Paper pad ruled by hand: blue row rules, ink column rule, double rule over totals.",
+      "html": "<div class=\"ds-pad\"><table><thead><tr><th>Us</th><th>Them</th></tr></thead><tbody><tr><td>162</td><td>0</td></tr><tr><td>150</td><td>418</td></tr></tbody><tfoot><tr><td>312</td><td>418</td></tr></tfoot></table><p>Totals to 1001</p></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-pad{background:var(--paper);color:var(--ink);border-radius:2px;box-shadow:0 1px 1px oklch(0.25 0.08 25 / 0.18),0 8px 18px -6px oklch(0.25 0.08 25 / 0.45);width:240px;padding:12px 16px 16px;rotate:-0.8deg}.ds-pad table{font-family:'Caveat Variable',Caveat,cursive;width:100%;border-collapse:collapse;font-size:24px;line-height:28px;font-variant-numeric:tabular-nums}.ds-pad th,.ds-pad td{width:50%;text-align:right;padding:0 12px}.ds-pad th:first-child,.ds-pad td:first-child{box-shadow:inset -2px 0 var(--ink)}.ds-pad thead tr,.ds-pad tbody tr{border-bottom:1px solid var(--paper-rule)}.ds-pad tfoot tr{border-top:5px double var(--ink);font-size:30px;line-height:40px;font-weight:700}.ds-pad p{font-family:'Inter Variable',Inter,sans-serif;margin:8px 0 0;font-size:12px;color:var(--ink-soft)}"
+    },
+    {
+      "name": "Call Ticket",
+      "kind": "chip",
+      "refersTo": "call-ticket",
+      "description": "Trump call option: suit pip over suit name; lifts on hover.",
+      "html": "<button class=\"ds-ticket\"><span class=\"ds-red\"><svg viewBox=\"0 0 100 100\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M50 92C22 70 4 50 4 30 4 14 16 4 29 4c10 0 17 6 21 14 4-8 11-14 21-14 13 0 25 10 25 26 0 20-18 40-46 62Z\"/></svg></span>Hearts</button>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-ticket{font-family:'Inter Variable',Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;padding:8px 8px 6px;border:1px solid oklch(0.26 0.06 262 / 0.28);border-radius:3px;background:var(--card-face);color:var(--ink);font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 1px 2px oklch(0.25 0.08 25 / 0.2);transition:translate .15s ease-out,box-shadow .15s ease-out}.ds-ticket:hover{translate:0 -2px;box-shadow:0 6px 12px -4px oklch(0.25 0.08 25 / 0.45)}.ds-ticket:focus-visible{outline:3px solid var(--oxblood);outline-offset:2px}.ds-ticket:active{translate:0 0}.ds-red{color:var(--card-red)}.ds-ticket svg{width:28px;height:28px}"
+    },
+    {
+      "name": "Turn Marker",
+      "kind": "chip",
+      "refersTo": "turn-marker",
+      "description": "Solid oxblood slip shown only on the player's own turn.",
+      "html": "<span class=\"ds-turnmark\">Your turn</span>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-turnmark{font-family:'Inter Variable',Inter,sans-serif;display:inline-block;padding:4px 12px;border-radius:2px;background:var(--oxblood);color:var(--card-face);font-size:14px;font-weight:600;box-shadow:0 6px 14px -6px oklch(0.25 0.08 25 / 0.6)}"
+    },
+    {
+      "name": "Dealer Coaster",
+      "kind": "custom",
+      "refersTo": "coaster",
+      "description": "Cardboard beer mat with printed rings and the dealer initial.",
+      "html": "<span class=\"ds-coaster\">D</span>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-coaster{font-family:'Caveat Variable',Caveat,cursive;display:inline-grid;place-items:center;width:36px;height:36px;border-radius:9999px;rotate:-12deg;background:var(--coaster);color:var(--oxblood);font-size:20px;font-weight:700;line-height:1;box-shadow:inset 0 0 0 3px var(--coaster),inset 0 0 0 5px var(--oxblood),inset 0 0 0 7px var(--coaster),inset 0 0 0 8px var(--oxblood),0 2px 5px oklch(0.25 0.08 25 / 0.4)}"
+    },
+    {
+      "name": "Target Score Choice",
+      "kind": "custom",
+      "refersTo": "score-total",
+      "description": "Handwritten target numbers; the chosen one circled in oxblood.",
+      "html": "<div class=\"ds-targets\"><button>501</button><button>701</button><button class=\"ds-chosen\" aria-pressed=\"true\">1001<svg viewBox=\"0 0 100 50\" preserveAspectRatio=\"none\" fill=\"none\" aria-hidden=\"true\"><path d=\"M58 5C30 2 5 10 4 25s22 21 48 20 45-8 44-22S72 2 40 6\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" vector-effect=\"non-scaling-stroke\"/></svg></button></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--paper-rule:oklch(0.7 0.07 245 / 0.4);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-red:oklch(0.53 0.21 27);--card-black:oklch(0.2 0.02 262);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--coaster:oklch(0.83 0.05 70)}.ds-targets{display:flex;gap:4px;padding:12px;background:var(--paper)}.ds-targets button{font-family:'Caveat Variable',Caveat,cursive;position:relative;padding:4px 12px;border:0;background:none;color:var(--ink-soft);font-size:30px;line-height:1;font-variant-numeric:tabular-nums;cursor:pointer}.ds-targets button:hover{color:var(--ink)}.ds-targets button:focus-visible{outline:2px solid var(--oxblood)}.ds-targets .ds-chosen{color:var(--ink);font-weight:700}.ds-chosen svg{position:absolute;inset:-4px -2px;width:calc(100% + 4px);height:calc(100% + 8px);color:var(--oxblood);pointer-events:none}"
+    },
+    {
+      "name": "Room and Tabletop",
+      "kind": "custom",
+      "refersTo": "cloth",
+      "description": "The match ground: wall, trim, plank floor, lamp, vignette; the gingham cloth on a wooden table tilted away by --tilt.",
+      "html": "<div class=\"ds-room\"><div class=\"ds-persp\"><div class=\"ds-top\"></div></div></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--wall:oklch(0.34 0.05 150);--wall-trim:oklch(0.22 0.03 60);--floor:oklch(0.34 0.06 55);--floor-seam:oklch(0.28 0.05 50);--lamp:oklch(0.78 0.09 70 / 0.35);--chair:oklch(0.42 0.07 50);--chair-dark:oklch(0.3 0.05 45);--silhouette:oklch(0.16 0.02 260)}.ds-room{background-color:var(--floor);background-image:radial-gradient(ellipse 75% 55% at 50% 55%,var(--lamp),transparent 70%),radial-gradient(ellipse at 50% 50%,transparent 50%,oklch(0.12 0.03 40 / 0.65)),linear-gradient(var(--wall) 0 22%,var(--wall-trim) 22% calc(22% + 0.4rem),transparent 0),repeating-linear-gradient(90deg,var(--floor) 0 4.5rem,var(--floor-seam) 4.5rem calc(4.5rem + 2px))}.ds-room{padding:56px 48px 64px}.ds-persp{perspective:900px}.ds-top{height:140px;border-radius:4px;transform:rotateX(34deg);transform-origin:50% 60%;background-color:var(--cloth);background-image:linear-gradient(90deg,var(--cloth-thread) 50%,transparent 50%),linear-gradient(var(--cloth-thread) 50%,transparent 50%);background-size:2rem 2rem;box-shadow:0 0 0 0.5rem oklch(0.35 0.07 45),0 0.75rem 0 0.5rem oklch(0.24 0.05 40),0 1.5rem 2rem oklch(0.08 0.02 40 / 0.7)}"
+    },
+    {
+      "name": "Seated Player",
+      "kind": "custom",
+      "refersTo": "name-card",
+      "description": "Another player in a chair: silhouette with rim light, card backs in hand, paper name card below. Silhouette and chair are the per-player skin point.",
+      "html": "<div class=\"ds-room ds-pad\"><div class=\"ds-seat\"><div class=\"ds-sit\"><div class=\"ds-chair\"></div><svg viewBox=\"0 0 100 90\" class=\"ds-fig\"><circle cx=\"50\" cy=\"28\" r=\"17\"/><path d=\"M8 90c2-26 18-40 42-40s40 14 42 40Z\"/></svg><div class=\"ds-backs\"><div class=\"ds-back\" style=\"rotate:-14deg\"></div><div class=\"ds-back\" style=\"rotate:-7deg\"></div><div class=\"ds-back\" style=\"rotate:0deg\"></div><div class=\"ds-back\" style=\"rotate:7deg\"></div><div class=\"ds-back\" style=\"rotate:14deg\"></div></div></div><div class=\"ds-name\"><b>mileva</b><span>7 cards</span></div></div></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--wall:oklch(0.34 0.05 150);--wall-trim:oklch(0.22 0.03 60);--floor:oklch(0.34 0.06 55);--floor-seam:oklch(0.28 0.05 50);--lamp:oklch(0.78 0.09 70 / 0.35);--chair:oklch(0.42 0.07 50);--chair-dark:oklch(0.3 0.05 45);--silhouette:oklch(0.16 0.02 260)}.ds-room{background-color:var(--floor);background-image:radial-gradient(ellipse 75% 55% at 50% 55%,var(--lamp),transparent 70%),radial-gradient(ellipse at 50% 50%,transparent 50%,oklch(0.12 0.03 40 / 0.65)),linear-gradient(var(--wall) 0 22%,var(--wall-trim) 22% calc(22% + 0.4rem),transparent 0),repeating-linear-gradient(90deg,var(--floor) 0 4.5rem,var(--floor-seam) 4.5rem calc(4.5rem + 2px))}.ds-fig{display:block;width:100%;fill:var(--silhouette);filter:drop-shadow(0 0 1.5px oklch(0.85 0.08 70 / 0.6))}.ds-back{width:14px;height:20px;margin-left:-10px;transform-origin:bottom;border:2px solid var(--card-face);border-radius:3px;background-color:var(--card-back);background-image:repeating-linear-gradient(45deg,var(--card-back-line) 0 1px,transparent 1px 5px),repeating-linear-gradient(-45deg,var(--card-back-line) 0 1px,transparent 1px 5px)}.ds-name{position:relative;margin-top:6px;background:var(--paper);color:var(--ink);border-radius:2px;box-shadow:0 1px 1px oklch(0.25 0.08 25 / 0.18),0 8px 18px -6px oklch(0.25 0.08 25 / 0.45);font-family:'Inter Variable',Inter,sans-serif;display:inline-flex;flex-direction:column;padding:6px 10px}.ds-name b{font-size:14px;font-weight:600}.ds-name span{font-size:12px;color:var(--ink-soft)}.ds-pad{padding:40px;display:flex;justify-content:center}.ds-seat{display:flex;flex-direction:column;align-items:center}.ds-sit{position:relative;width:96px}.ds-chair{position:absolute;left:-4%;right:-4%;top:-22%;bottom:12%;border-radius:6px 6px 2px 2px;background:repeating-linear-gradient(90deg,var(--chair) 0 18%,var(--chair-dark) 18% 24%);box-shadow:0 6px 10px oklch(0.1 0.02 40 / 0.6)}.ds-fig{position:relative}.ds-backs{position:absolute;bottom:-6%;left:50%;translate:-50% 0;display:flex;align-items:flex-end;padding-left:10px}"
+    },
+    {
+      "name": "Name Card with Portrait",
+      "kind": "card",
+      "refersTo": "name-card",
+      "description": "Phone opponent seat: card backs above a paper name card that starts with a round silhouette portrait.",
+      "html": "<div class=\"ds-room ds-pad\"><div class=\"ds-seat\"><div class=\"ds-backs\"><div class=\"ds-back\" style=\"rotate:-14deg\"></div><div class=\"ds-back\" style=\"rotate:-7deg\"></div><div class=\"ds-back\" style=\"rotate:0deg\"></div><div class=\"ds-back\" style=\"rotate:7deg\"></div><div class=\"ds-back\" style=\"rotate:14deg\"></div></div><div class=\"ds-name ds-row\"><span class=\"ds-por\"><svg viewBox=\"0 0 100 90\" class=\"ds-fig\"><circle cx=\"50\" cy=\"28\" r=\"17\"/><path d=\"M8 90c2-26 18-40 42-40s40 14 42 40Z\"/></svg></span><span class=\"ds-txt\"><b>Bata</b><span>6 cards</span></span></div></div></div>",
+      "css": ":host{--cloth:oklch(0.975 0.006 85);--cloth-thread:oklch(0.56 0.19 26 / 0.5);--paper:oklch(0.985 0.008 95);--ink:oklch(0.26 0.06 262);--ink-soft:oklch(0.44 0.05 262);--oxblood:oklch(0.4 0.14 22);--card-face:oklch(0.995 0.002 95);--card-back:oklch(0.4 0.14 22);--card-back-line:oklch(0.995 0.002 95 / 0.22);--wall:oklch(0.34 0.05 150);--wall-trim:oklch(0.22 0.03 60);--floor:oklch(0.34 0.06 55);--floor-seam:oklch(0.28 0.05 50);--lamp:oklch(0.78 0.09 70 / 0.35);--chair:oklch(0.42 0.07 50);--chair-dark:oklch(0.3 0.05 45);--silhouette:oklch(0.16 0.02 260)}.ds-room{background-color:var(--floor);background-image:radial-gradient(ellipse 75% 55% at 50% 55%,var(--lamp),transparent 70%),radial-gradient(ellipse at 50% 50%,transparent 50%,oklch(0.12 0.03 40 / 0.65)),linear-gradient(var(--wall) 0 22%,var(--wall-trim) 22% calc(22% + 0.4rem),transparent 0),repeating-linear-gradient(90deg,var(--floor) 0 4.5rem,var(--floor-seam) 4.5rem calc(4.5rem + 2px))}.ds-fig{display:block;width:100%;fill:var(--silhouette);filter:drop-shadow(0 0 1.5px oklch(0.85 0.08 70 / 0.6))}.ds-back{width:14px;height:20px;margin-left:-10px;transform-origin:bottom;border:2px solid var(--card-face);border-radius:3px;background-color:var(--card-back);background-image:repeating-linear-gradient(45deg,var(--card-back-line) 0 1px,transparent 1px 5px),repeating-linear-gradient(-45deg,var(--card-back-line) 0 1px,transparent 1px 5px)}.ds-name{position:relative;margin-top:6px;background:var(--paper);color:var(--ink);border-radius:2px;box-shadow:0 1px 1px oklch(0.25 0.08 25 / 0.18),0 8px 18px -6px oklch(0.25 0.08 25 / 0.45);font-family:'Inter Variable',Inter,sans-serif;display:inline-flex;flex-direction:column;padding:6px 10px}.ds-name b{font-size:14px;font-weight:600}.ds-name span{font-size:12px;color:var(--ink-soft)}.ds-pad{padding:40px;display:flex;justify-content:center}.ds-seat{display:flex;flex-direction:column;align-items:center}.ds-backs{display:flex;align-items:flex-end;padding-left:10px;margin-bottom:6px}.ds-row{flex-direction:row;align-items:center;gap:8px}.ds-txt{display:flex;flex-direction:column}.ds-por{display:grid;place-items:end;width:28px;height:28px;border-radius:9999px;overflow:hidden;background:var(--wall)}.ds-por .ds-fig{translate:0 8%}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kafana Table",
+    "overview": "The match screen is a kafana room in 2.5D. A dim room (dark green wall, a dark trim, a plank floor, one warm lamp over the table) holds a wooden table, tilted away from the player. A red and white woven gingham cloth covers the table top. The other players sit in chairs behind and beside the table as dark silhouettes, each holding a small fan of card backs. Everything the player reads is an object: white playing cards, oxblood lattice card backs, folded paper name cards, a paper score pad written by hand, a round cardboard coaster that marks the dealer. Ink is a near-black blue. The one accent is oxblood. The world refuses the category default of green casino felt with floating HUD panels.\n\nObjects lie a little askew, as if put down by hand: paper panels rotate between -1.4deg and 1.4deg, trick cards land at -6deg to 5deg, the hand fans on a shallow arc. Density is low. The game state (turn, trump, score, trick) is readable at a glance. The room is the only full-bleed surface; the cloth is the table top only, and the player's own hand stays flat at the bottom edge, outside the tilt.\n\nThe world lives behind a skin seam. The cloth, the card back, and the card face are CSS variables on the skin scope, so a host skin (PRODUCT.md: the host picks card face, card back, and table) swaps them without touching components. The silhouette and the chair are the per-player swap point: a player skin later replaces the figure (and its chair) for one seat, not for the table.",
+    "keyCharacteristics": [
+      "A dim kafana room around a tilted wooden table; gingham cloth on the table top only. Nothing is written straight on the cloth.",
+      "The other players are silhouettes in chairs, holding card backs; their names are on paper name cards.",
+      "Paper and cards are the only surfaces that carry text or play, with soft warm shadows; the room around them is dark and quiet.",
+      "Oxblood is the only accent; card red and card black belong to the cards.",
+      "Caveat (handwriting) for what a player would write: titles, scores, the chosen target. Inter for everything printed.",
+      "Objects sit slightly askew, never on a strict axis.",
+      "Skin seam: cloth, card back, card face are host-skin variables; silhouette and chair are the per-player swap point."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Oxblood is the only accent. Suit red and suit black appear only on cards, suit pips, and call tickets, where they belong to the deck, not to the interface.",
+        "section": "colors"
+      },
+      {
+        "name": "The Skin Seam Rule",
+        "body": "Cloth, card back, and card face are always read through their variables (`--cloth`, `--cloth-thread`, `--card-back`, `--card-back-line`, `--card-face`, `--card-red`, `--card-black`). Never hard-code their values in a component; a host skin must be able to replace them on the skin scope alone. The seated figure and its chair read `--silhouette`, `--chair`, and `--chair-dark` the same way, because a player skin will swap them per seat.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pen and Print Rule",
+        "body": "Caveat only for what is written by hand on the table: titles, scores, the chosen target. Never for instructions, buttons, names, or long text.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lying Flat Rule",
+        "body": "Every shadow is soft and warm (red-brown on the table, darker brown in the room), never grey and never a hard offset. Objects rest on the table or in a player's hands; they do not float. The table's wooden rim and front edge are solid spread layers because they are wood, not shadow; no other object uses that device.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** put every word on paper or a card. The cloth and the room carry objects only (cards, card backs, paper, figures, chairs).",
+      "**Do** read cloth, card back, and card face through their skin variables, and scope new table surfaces with `.table-skin`.",
+      "**Do** draw another player as the silhouette (in a chair where there is room), and read its colours through `--silhouette`, `--chair`, `--chair-dark`.",
+      "**Do** put what lies on the table (the trick) inside the tilted table top, and keep the own hand and all paper flat.",
+      "**Do** use the paper-rest shadow for any new paper object and tilt it a little (within 1.5deg).",
+      "**Do** use Caveat for scores and handwritten titles, Inter for everything else.",
+      "**Do** mark state with oxblood: the outline for turn and won trick, the solid slip for \"your turn\", the circle for a choice.",
+      "**Do** size anything card-like from `--card-w`, and seated figures from `--seat-w`."
+    ],
+    "donts": [
+      "**Don't** use green felt, HUD panels, or glass; this is a kafana table, not a casino. The green is the wall, never the table surface.",
+      "**Don't** add a second accent colour. Suit red is for the deck only.",
+      "**Don't** write text straight on the cloth.",
+      "**Don't** use grey or hard-offset shadows.",
+      "**Don't** draw suits with text glyphs; use the suit pip SVG.",
+      "**Don't** hard-code a skin colour in a component."
+    ]
+  }
+}
