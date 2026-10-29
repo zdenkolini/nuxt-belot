@@ -31,9 +31,7 @@
         "input count",
         "local countPlural = count: plural"
       ],
-      "selectors": [
-        "countPlural"
-      ],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "We have you down as {email}, with {count} match played at our tables.",
         "countPlural=other": "We have you down as {email}, with {count} matches played at our tables."
@@ -42,13 +40,8 @@
   ],
   "letter_guest_body": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "You play as a guest. Your account lives only in this browser, with {count} match played so far.",
         "countPlural=other": "You play as a guest. Your account lives only in this browser, with {count} matches played so far."
@@ -81,13 +74,8 @@
   "room_of": "Room of {owner}",
   "free_seats": [
     {
-      "declarations": [
-        "input count",
-        "local countPlural = count: plural"
-      ],
-      "selectors": [
-        "countPlural"
-      ],
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
       "match": {
         "countPlural=one": "{count} free seat",
         "countPlural=other": "{count} free seats"

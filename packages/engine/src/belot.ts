@@ -8,8 +8,8 @@ import {
   type Random,
   type Rank,
   type Suit,
-} from './cards';
-import type { Applied, Ruleset, Seat } from './ruleset';
+} from '#src/cards';
+import type { Applied, Ruleset, Seat } from '#src/ruleset';
 
 export const targetScores = [501, 701, 1001] as const;
 export type TargetScore = (typeof targetScores)[number];
@@ -245,8 +245,11 @@ const scoreDeal = (deal: Deal): DealScore => {
   };
 };
 
-const sequencePoints = (length: number) =>
-  length === 3 ? 20 : length === 4 ? 50 : 100;
+const sequencePoints = (length: number) => {
+  if (length === 3) return 20;
+  if (length === 4) return 50;
+  return 100;
+};
 
 const fourOfAKindPoints: Partial<Record<Rank, number>> = {
   jack: 200,
@@ -349,6 +352,19 @@ const call = (deal: Deal, seat: Seat, trump: Suit): Deal => {
   };
 };
 
+// Belote is the king and queen of trump held by one player.
+const beloteRank: Partial<Record<Rank, Rank>> = {
+  king: 'queen',
+  queen: 'king',
+};
+
+// A tied match goes to the team that called trump in the last deal.
+const leadingTeam = (scores: TeamPoints, caller: Seat): Team => {
+  if (scores[0] === scores[1]) return teamOf(caller);
+  if (scores[0] > scores[1]) return 0;
+  return 1;
+};
+
 const playCard = (
   state: BelotState,
   seat: Seat,
@@ -361,8 +377,7 @@ const playCard = (
   );
   const trick = [...deal.trick, { seat, card }];
   const events: BelotEvent[] = [{ type: 'played', seat, card }];
-  const partnerRank =
-    card.rank === 'king' ? 'queen' : card.rank === 'queen' ? 'king' : null;
+  const partnerRank = beloteRank[card.rank] ?? null;
   const belote =
     card.suit === deal.trump &&
     hands[seat]!.some(
@@ -400,13 +415,7 @@ const playCard = (
       scores[0] >= targetScore ||
       scores[1] >= targetScore
     ) {
-      const winner: Team =
-        score.winsMatch ??
-        (scores[0] === scores[1]
-          ? teamOf(deal.caller!)
-          : scores[0] > scores[1]
-            ? 0
-            : 1);
+      const winner = score.winsMatch ?? leadingTeam(scores, deal.caller!);
       const result = { winner, scores };
       events.push({ type: 'matchEnded', result });
       return {

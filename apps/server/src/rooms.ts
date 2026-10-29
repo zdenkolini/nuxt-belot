@@ -2,10 +2,10 @@ import { rooms, user, type Db } from '@belot/db';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { targetScores, type TargetScore } from '@belot/engine';
 import { Elysia, status, t } from 'elysia';
-import { botIds, botMove, createBots, isBot } from './bots';
-import { createChat, type ChatIntent, type ChatServerMessage } from './chat';
-import { createPlay, type MatchIntent, type MatchMessage } from './play';
-import type { Member, Session } from './session';
+import { botIds, botMove, createBots, isBot } from '#src/bots';
+import { createChat, type ChatIntent, type ChatServerMessage } from '#src/chat';
+import { createPlay, type MatchIntent, type MatchMessage } from '#src/play';
+import type { Member, Session } from '#src/session';
 
 type Room = typeof rooms.$inferSelect;
 
@@ -335,9 +335,11 @@ export const createRooms = async (db: Db, bots: boolean) => {
             const taken = room.seats[seat];
             if (taken && taken !== userId)
               return status(409, { error: 'seat_taken' as const });
-            room.seats = room.seats.map((s, i) =>
-              i === seat ? userId : s === userId ? null : s,
-            );
+            room.seats = room.seats.map((s, i) => {
+              if (i === seat) return userId;
+              if (s === userId) return null;
+              return s;
+            });
           });
           if (!result.ok) return result.failure;
           // One seat per player: the old seat is freed, and a player not

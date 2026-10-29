@@ -514,11 +514,7 @@
     ],
     "playerSkinSeam": {
       "scope": "per seat (the seated figure and its chair)",
-      "variables": [
-        "--silhouette",
-        "--chair",
-        "--chair-dark"
-      ],
+      "variables": ["--silhouette", "--chair", "--chair-dark"],
       "purpose": "The per-player swap point. A player skin later replaces the silhouette (and chair) for one seat. Components read them only through the variables."
     }
   },

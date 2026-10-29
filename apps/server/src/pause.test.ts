@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import type { MatchView } from './app';
-import { nextOf, send, setup, table, type Socket } from './test-setup';
+import type { MatchView } from '#src/app';
+import { nextOf, send, setup, table, type Socket } from '#src/test-setup';
 
 // The next match message once every seated player is connected again.
 const resumed = async (socket: Socket) => {

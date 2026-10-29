@@ -5,7 +5,7 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "bun test",
-    "typecheck": "bun --bun tsc",
+    "typecheck": "bun check",
     "generate": "bun --bun drizzle-kit generate"
   },
   "dependencies": {
@@ -17,5 +17,8 @@
     "@types/bun": "catalog:",
     "drizzle-kit": "^0.31.0",
     "typescript": "catalog:"
+  },
+  "imports": {
+    "#src/*": "./src/*.ts"
   }
 }

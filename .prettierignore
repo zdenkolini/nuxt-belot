@@ -1,5 +1,0 @@
-bun.lock
-node_modules
-build
-.svelte-kit
-drizzle

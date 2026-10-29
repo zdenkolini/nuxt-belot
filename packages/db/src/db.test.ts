@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createDb, rooms, user } from './index';
+import { createDb, rooms, user } from '#src/index';
 
 test('a new in-memory database is migrated and stores rooms', async () => {
   const db = await createDb();

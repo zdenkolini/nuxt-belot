@@ -1,0 +1,13 @@
+pre-commit:
+  jobs:
+    - name: fmt
+      run: bun fmt --ignore-unknown --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+    - name: lint
+      glob: '*.{js,ts,svelte}'
+      run: bunx oxlint {staged_files}
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: bunx commitlint --edit {1}

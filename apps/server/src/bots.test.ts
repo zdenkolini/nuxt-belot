@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { nextOf, setup } from './test-setup';
+import { nextOf, setup } from '#src/test-setup';
 
 test('a room owner seats bots, and bots play until it is the owner’s turn', async () => {
   const { api, player, connect } = await setup();
@@ -14,7 +14,12 @@ test('a room owner seats bots, and bots play until it is the owner’s turn', as
   const socket = await connect(data!.id, ana);
   const { room: seated } = await nextOf(socket, 'room');
   expect(seated.seats).toEqual([ana.id, 'bot-1', 'bot-2', 'bot-3']);
-  expect(seated.members.map((m) => m.username)).toEqual(['ana', 'Bot 1', 'Bot 2', 'Bot 3']);
+  expect(seated.members.map((m) => m.username)).toEqual([
+    'ana',
+    'Bot 1',
+    'Bot 2',
+    'Bot 3',
+  ]);
 
   expect((await room.start.post({}, ana)).status).toBe(200);
   // Bots never pause the match, and they move without anyone asking.

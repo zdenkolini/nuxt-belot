@@ -1,3 +1,3 @@
-export * from './cards';
-export * from './ruleset';
-export * from './belot';
+export * from '#src/cards';
+export * from '#src/ruleset';
+export * from '#src/belot';

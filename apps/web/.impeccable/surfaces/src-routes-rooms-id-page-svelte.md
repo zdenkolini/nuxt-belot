@@ -1,8 +1,8 @@
 ---
 version: 1
-slug: "src-routes-rooms-id-page-svelte"
-primary_target: "src/routes/rooms/[id]/+page.svelte"
-related_targets: ["src/lib/components/match/match-screen.svelte"]
+slug: 'src-routes-rooms-id-page-svelte'
+primary_target: 'src/routes/rooms/[id]/+page.svelte'
+related_targets: ['src/lib/components/match/match-screen.svelte']
 ---
 
 # Room and game table (rooms/[id])
