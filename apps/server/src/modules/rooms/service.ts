@@ -3,7 +3,7 @@ import { rooms, user, type Db } from '@belot/db';
 import { eq } from 'drizzle-orm';
 import type { TargetScore } from '@belot/engine';
 import { botIds, botMove, createBots, isBot } from '#src/bots';
-import { createChat } from '#src/chat';
+import { createChat } from '#src/modules/chat/service';
 import { holdsUser, usernames } from '#src/modules/account/service';
 import { createMatches, MatchRejected } from '#src/modules/matches/service';
 import type { Settings } from '#src/modules/rooms/model';

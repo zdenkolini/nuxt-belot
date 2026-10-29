@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import type { ChatIntent } from '#src/chat';
+import { isChatIntent, type ChatIntent } from '#src/modules/chat/service';
 import { roomParams } from '#src/modules/rooms/model';
 import type { Socket, Sockets } from '#src/modules/sockets/service';
 import type { MatchIntent } from '#src/modules/matches/service';
@@ -62,8 +62,8 @@ export const socketRoutes = (
         await handlers.move(socket, intent.move ?? {});
       } else if (intent?.type === 'match.end') {
         await handlers.end(socket);
-      } else if (String(intent?.type).startsWith('chat.')) {
-        handlers.chat(socket, intent as ChatIntent);
+      } else if (isChatIntent(intent)) {
+        handlers.chat(socket, intent);
       }
     },
     async close(ws) {

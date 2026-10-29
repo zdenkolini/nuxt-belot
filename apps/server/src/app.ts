@@ -10,7 +10,7 @@ import { createRooms } from '#src/modules/rooms/service';
 import { createSession } from '#src/plugins/session';
 
 export type { Email } from '#src/plugins/auth';
-export type { ChatIntent, ChatMessage } from '#src/chat';
+export type { ChatIntent, ChatMessage } from '#src/modules/chat/service';
 export type {
   MatchIntent,
   MatchView,
