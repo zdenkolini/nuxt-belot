@@ -80,7 +80,7 @@
 						<li class="flex items-baseline justify-between py-1.5">
 							<span class="font-semibold">{me.data.username}</span>
 							<a class="text-xs underline underline-offset-2" href={resolve('/account')}>
-								{m.account_link()}
+								{me.data.isGuest ? m.claim_account() : m.account_link()}
 							</a>
 						</li>
 					{/if}
