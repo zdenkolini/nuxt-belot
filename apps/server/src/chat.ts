@@ -1,4 +1,4 @@
-import type { Member } from '#src/plugins/session';
+import type { Socket, Sockets } from '#src/modules/sockets/service';
 
 export type ChatMessage = {
   id: string;
@@ -20,14 +20,12 @@ export type ChatIntent =
   | { type: 'chat.unmute'; userId: string }
   | { type: 'chat.history' };
 
-type Recipient = { userId: string; send: (message: ChatServerMessage) => void };
-
 const maxLength = 500;
 const historyLength = 100;
 
 // Chat lives in memory, by room. Mutes are per player and per room, and only
 // filter what the muting player receives.
-export const createChat = () => {
+export const createChat = (sockets: Sockets) => {
   const logs = new Map<string, ChatMessage[]>();
   const mutes = new Map<string, Map<string, Set<string>>>();
 
@@ -48,13 +46,7 @@ export const createChat = () => {
     };
   };
 
-  // Handles a chat intent from a member's socket; `recipients` are the open
-  // sockets of everyone in the room.
-  const handle = (
-    socket: Member & Recipient,
-    intent: ChatIntent,
-    recipients: Recipient[],
-  ) => {
+  const handle = (socket: Socket, intent: ChatIntent) => {
     const { roomId, userId: from } = socket;
     if (intent.type === 'chat.history')
       return socket.send(history(roomId, from));
@@ -64,20 +56,18 @@ export const createChat = () => {
       const message = { id: crypto.randomUUID(), from, text, at: Date.now() };
       const log = logs.get(roomId) ?? [];
       logs.set(roomId, [...log, message].slice(-historyLength));
-      for (const r of recipients) {
-        if (!mutedBy(roomId, r.userId).has(from)) {
-          r.send({ type: 'chat.message', message });
-        }
-      }
+      const hearing = [...sockets.connected(roomId)].filter(
+        (id) => !mutedBy(roomId, id).has(from),
+      );
+      const sent: ChatServerMessage = { type: 'chat.message', message };
+      sockets.sendEach(roomId, new Map(hearing.map((id) => [id, sent])));
       return;
     }
     const muted = mutedBy(roomId, from);
     if (intent.type === 'chat.mute') muted.add(intent.userId);
     else if (intent.type === 'chat.unmute') muted.delete(intent.userId);
     else return;
-    for (const r of recipients) {
-      if (r.userId === from) r.send(history(roomId, from));
-    }
+    sockets.sendTo(socket, history(roomId, from));
   };
 
   // Drops a room's chat once the room is gone.

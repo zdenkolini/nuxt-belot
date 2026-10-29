@@ -5,13 +5,16 @@ import { Elysia, t } from 'elysia';
 import { createAuth, type AuthOptions } from '#src/plugins/auth';
 import { errors } from '#src/plugins/errors';
 import { claimRoutes } from '#src/claims';
+import { socketRoutes } from '#src/modules/sockets/index';
+import { createSockets } from '#src/modules/sockets/service';
 import { createRooms } from '#src/rooms';
 import { createSession } from '#src/plugins/session';
 
 export type { Email } from '#src/plugins/auth';
 export type { ChatIntent, ChatMessage } from '#src/chat';
 export type { MatchIntent, MatchView, MoveRejection } from '#src/play';
-export type { PublicRoom, RoomMessage, RoomView } from '#src/rooms';
+export type { RoomMessage } from '#src/modules/sockets/service';
+export type { PublicRoom, RoomView } from '#src/rooms';
 
 const usernameChangeInterval = 30 * 24 * 60 * 60 * 1000;
 
@@ -24,7 +27,8 @@ const isUniqueViolation = (e: unknown) =>
 // `bots` lets a room owner seat bots; for testing, never in production.
 export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
   const { db } = options;
-  const rooms = await createRooms(db, options.bots ?? false);
+  const sockets = createSockets();
+  const rooms = await createRooms(db, options.bots ?? false, sockets);
   const auth = createAuth(options, rooms);
   const session = createSession(auth);
 
@@ -35,6 +39,7 @@ export const createApp = async (options: AuthOptions & { bots?: boolean }) => {
       .mount(auth.handler)
       .use(session)
       .use(rooms.routes(session))
+      .use(socketRoutes(session, sockets, rooms.socketHandlers))
       .use(claimRoutes(db, session))
       .get('/health', () => ({ status: 'ok' as const }))
       .get(
