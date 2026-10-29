@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { rooms, user, type Db } from '@belot/db';
 import { eq } from 'drizzle-orm';
 import type { TargetScore } from '@belot/engine';
-import { botIds, botMove, createBots, isBot } from '#src/bots';
+import { createBots, isBot, seatBot } from '#src/modules/bots/service';
 import { createChat } from '#src/modules/chat/service';
 import { holdsUser, usernames } from '#src/modules/account/service';
 import { createMatches, MatchRejected } from '#src/modules/matches/service';
@@ -92,56 +92,24 @@ export const removeMember = (room: Room, member: string) => {
   room.removed.push(member);
 };
 
-export const seatBot = (room: Room, seat: number) => {
-  if (room.seats[seat]) throw new Conflict('seat_taken');
-  const bot = botIds.find((b) => !room.members.includes(b));
-  if (!bot) throw new Conflict('no_bot_left');
-  room.members.push(bot);
-  room.seats[seat] = bot;
-};
-
 export const seatedPlayers = (room: { seats: (string | null)[] }) => {
   const players = room.seats.filter((id) => id !== null);
   if (players.length < room.seats.length) throw new Conflict('seats_not_full');
   return players;
 };
 
-export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
-  if (bots) await createBots(db);
+export const createRooms = async (
+  db: Db,
+  botsEnabled: boolean,
+  sockets: Sockets,
+) => {
   const chat = createChat(sockets);
   const matches = await createMatches(db, sockets.connected);
-
-  // A bot whose turn it is plays after a short pause, and so on, until a
-  // person is to play or the match is paused or over.
-  const thinking = new Set<string>();
-  const runBots = (roomId: string) => {
-    if (!bots || thinking.has(roomId)) return;
-    const turn = [...matches.viewsOf(roomId)].find(
-      ([userId, message]) =>
-        isBot(userId) &&
-        message.type === 'match' &&
-        message.match.legalMoves.length > 0 &&
-        message.match.missing.length === 0,
-    );
-    if (!turn) return;
-    thinking.add(roomId);
-    setTimeout(async () => {
-      thinking.delete(roomId);
-      const [userId, message] = turn;
-      if (message.type !== 'match') return;
-      const move = botMove(message.match.legalMoves);
-      try {
-        sendMatch(roomId, await matches.move({ roomId, userId }, move));
-      } catch (e) {
-        // The match may have paused meanwhile.
-        if (!(e instanceof MatchRejected)) throw e;
-      }
-    }, 700);
-  };
+  const bots = await createBots(db, botsEnabled, matches, sockets);
 
   const sendMatch = (roomId: string, messages: Map<string, RoomMessage>) => {
     sockets.sendEach(roomId, messages);
-    runBots(roomId);
+    bots.play(roomId);
   };
 
   const view = async (room: Room): Promise<RoomView> => {
@@ -380,7 +348,7 @@ export const createRooms = async (db: Db, bots: boolean, sockets: Sockets) => {
     },
 
     addBot: (id: string, userId: string, seat: number) => {
-      if (!bots) throw new NotFound('bots_disabled');
+      if (!bots.enabled) throw new NotFound('bots_disabled');
       return update(id, (room) => {
         assertOwner(room, userId);
         assertNoMatch(room);
