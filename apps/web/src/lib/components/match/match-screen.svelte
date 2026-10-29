@@ -16,7 +16,14 @@
   import * as Card from '#lib/components/ui/card';
   import * as Dialog from '#lib/components/ui/dialog';
   import { m } from '#lib/paraglide/messages';
-  import { isRed, receive, send, sortHand, suitNames, sweep } from '#lib/components/match/cards';
+  import {
+    isRed,
+    receive,
+    send,
+    sortHand,
+    suitNames,
+    sweep,
+  } from '#lib/components/match/cards';
   import ChairFigure from '#lib/components/match/chair-figure.svelte';
   import DealScoreTable from '#lib/components/match/deal-score.svelte';
   import Declarations from '#lib/components/match/declarations.svelte';
